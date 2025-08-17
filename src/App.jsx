@@ -42,13 +42,13 @@ export default function App() {
         </Routes>
 
         {!hideNav && (
-          <div className="absolute inset-x-4 bottom-4">
+          <div className="absolute inset-x-0 bottom-0">
             <Navigation
               active={active}
               onChange={(key) => navigate(keyToPath[key])}
             />
           </div>
-        )}
+        )}ㄴ
       </div>
     </Layout>
   );
