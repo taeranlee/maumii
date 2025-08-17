@@ -5,6 +5,8 @@ export default function Intro() {
       <div className="space-y-4 text-center">
         <h1 className="text-2xl font-bold">Intro</h1>
         <Link to="/mypage" className="text-blue-600 underline">마이페이지로 이동</Link>
+        <br></br>
+        <Link to="/login" className="text-blue-600 underline">Login</Link>
       </div>
     </div>
   );
