@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 전역 레이아웃 */
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;   /* 바깥 스크롤 금지 */
+  background: #ffffff;/* 모바일에서 회색 안 보이게 흰색 */
+}
+
+/* (선택) 모바일 기본 타이포 */
+/* :root { --fs-body: clamp(14px, 3.5vw, 18px); } */
+body { font-size: var(--fs-body); }
