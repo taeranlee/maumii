@@ -6,4 +6,4 @@ export default function Navigation() {
       <button className="text-slate-500 text-sm">마이</button>
     </nav>
   );
-}git
+}
