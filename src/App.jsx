@@ -2,7 +2,7 @@
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Intro from "./pages/Intro.jsx";
 import Login from "./pages/Login.jsx";
-import Register from "./pages/ButtonEx.jsx";
+import Register from "./pages/Register.jsx";
 import Mypage from "./pages/Mypage.jsx";
 import Navigation from "./components/Navigation.jsx";
 import Layout from "./components/Layout.jsx";
@@ -42,13 +42,13 @@ export default function App() {
         </Routes>
 
         {!hideNav && (
-          <div className="absolute inset-x-4 bottom-4">
+          <div className="absolute inset-x-0 bottom-0">
             <Navigation
               active={active}
               onChange={(key) => navigate(keyToPath[key])}
             />
           </div>
-        )}
+        )}ㄴ
       </div>
     </Layout>
   );

@@ -23,7 +23,7 @@ export default function Navigation({ active = "mic", onChange }) {
   );
 
   return (
-    <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-[calc(100%-32px)] max-w-[390px]">
+   <div className="relative w-full max-w-[390px] mx-auto">
       {/* 배경 바 */}
       <div className="relative z-0 flex items-center justify-between rounded-3xl bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
         {/* 왼쪽 탭: 기록 */}
