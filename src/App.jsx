@@ -2,7 +2,7 @@
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Intro from "./pages/Intro.jsx";
 import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
+import Register from "./pages/ButtonEx.jsx";
 import Mypage from "./pages/Mypage.jsx";
 import Navigation from "./components/Navigation.jsx";
 import Layout from "./components/Layout.jsx";
