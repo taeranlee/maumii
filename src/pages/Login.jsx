@@ -22,7 +22,9 @@ export default function Login() {
     };
     return (
         <form onSubmit={handleSubmit} className="flex-1 bg-white">
-            <Title variant="auth">로그인</Title>
+            <div className="m-16">
+                <Title variant="auth">로그인</Title>
+            </div>
             
                 <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-4">
                     <Input

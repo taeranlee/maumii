@@ -32,9 +32,11 @@ export default function Register() {
     return (
         <form
             onSubmit={handleSubmit}
-            className="flex-1 overflow-y-auto bg-white"
+            className="overflow-y-auto h-full bg-white"
         >
-        <Title variant="auth">회원가입</Title>
+        <div className="m-16">
+            <Title variant="auth">회원가입</Title>
+        </div>
         <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-3">
             <Input
                 label="이름"

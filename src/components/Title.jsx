@@ -2,7 +2,7 @@ export default function Title({ children, variant = "default", className = "", i
   const base = "font-bold text-center relative " + className;
 
   const styles = {
-    auth: "m-20 text-4xl text-primary " + base,   // 로그인/회원가입용
+    auth: "text-4xl text-primary " + base,   // 로그인/회원가입용
     default: "text-2xl text-black " + base,      // 일반 페이지용
   };
 
