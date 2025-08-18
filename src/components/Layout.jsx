@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   const keyToPath = { record: "/", mic: "/record", mypage: "/mypage" };
 
   const active = pathToKey[location.pathname] ?? "record";
-  const hideNav = ["/login", "/register"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
+  const hideNav = ["/login", "/register", "/register/detail"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
 
   return (
     <div className="h-full md:grid md:place-items-center md:bg-slate-200">
@@ -24,7 +24,7 @@ export default function Layout({ children }) {
           md:rounded-2xl md:shadow-2xl md:border md:border-slate-300
         "
       >
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
+        <main className="flex-1 overflow-y-auto bg-white p-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
           {children}
         </main>
 

@@ -4,7 +4,7 @@ import Intro from "./pages/Intro.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Mypage from "./pages/Mypage.jsx";
-import Navigation from "./components/Navigation.jsx";
+import RegisterDetail from "./pages/RegisterDetail.jsx";
 import Layout from "./components/Layout.jsx";
 
 export default function App() {
@@ -18,6 +18,7 @@ export default function App() {
           <Route path="/mypage" element={<Mypage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register/detail" element={<RegisterDetail />} />
           <Route path="*" element={<div className="p-6">Not Found</div>} />
         </Routes>
   );
