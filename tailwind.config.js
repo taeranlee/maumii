@@ -6,13 +6,18 @@ export default {
       fontFamily: {
         sans: ["Pretendard", "sans-serif"],
       },
+      fontSize: {
+        sm: ['14px', '20px'],
+        base: ['16px', '24px'],
+        lg: ['20px', '28px'],
+        xl: ['24px', '32px'],
+      },
       colors: {
         primary: "#A960B0",
         background: "#F8F6FF",
         notice: "#F9E000",
         white: "#ffffff",
         icon: "#440183",
-
         button: {
           none: "#9DB2CE",
           send: "rgba(166,144,255,0.4)",
@@ -33,9 +38,9 @@ export default {
           200: "#5B5758",
           300: "#404040",
           400: "#080808",
-        },
-      },
-    },
+        }
+      }
+    }
   },
   plugins: [],
 };
