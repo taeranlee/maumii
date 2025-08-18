@@ -4,6 +4,7 @@ import Intro from "./pages/Intro.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Mypage from "./pages/Mypage.jsx";
+// import MyPageEdit from "./pages/MypageEdit.jsx";
 import Navigation from "./components/Navigation.jsx";
 import Layout from "./components/Layout.jsx";
 
