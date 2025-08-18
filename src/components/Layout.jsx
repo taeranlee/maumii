@@ -24,7 +24,7 @@ export default function Layout({ children }) {
           md:rounded-2xl md:shadow-2xl md:border md:border-slate-300
         "
       >
-        <main className="flex-1 bg-white p-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
+        <main className="flex-1 min-h-0">
           {children}
         </main>
 
