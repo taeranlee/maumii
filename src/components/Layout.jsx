@@ -24,9 +24,9 @@ export default function Layout({ children }) {
           md:rounded-2xl md:shadow-2xl md:border md:border-slate-300
         "
       >
-        {/* <main className="flex-1 overflow-y-auto bg-slate-50 p-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 pb-[calc(88px+env(safe-area-inset-bottom))]">
           {children}
-        </main> */}
+        </main>
 
         {/* 프레임 내부 하단 고정 네비 */}
         {!hideNav && (

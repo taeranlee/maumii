@@ -9,7 +9,6 @@ import Layout from "./components/Layout.jsx";
 
 export default function App() {
   return (
-    <Layout>
         <Routes>
           <Route path="/" element={<Intro />} />
           <Route
@@ -21,6 +20,5 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="*" element={<div className="p-6">Not Found</div>} />
         </Routes>
-    </Layout>
   );
 }
