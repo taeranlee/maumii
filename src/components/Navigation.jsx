@@ -62,14 +62,23 @@ export default function Navigation({ active = "mic", onChange }) {
         onClick={() => onChange?.("mic")}
         className={`group absolute left-1/2 top-0 z-30 grid h-16 w-16 -translate-x-1/2 -translate-y-1/4 place-items-center rounded-full
           bg-button-nav ring-8 ring-white transition shadow-[0_-10px_10px_rgba(0,0,0,0.25)]
-          after:content-[''] after:absolute after:inset-[-8px] after:rounded-full
-          after:bg-[radial-gradient(circle,rgba(97,62,234,0.5)_0,transparent_70%)]
-          after:blur-md after:z-[25] after:shadow-[0_4px_12px_rgba(97,62,234,0.5)]
           hover:scale-105 active:scale-95
           ${is("mic") ? "" : ""}`}
         aria-current={is("mic") ? "page" : undefined}
       >
-        <MicIcon className="h-7 w-7 text-white" />
+        <div className="absolute inset-0 rounded-full bg-button-nav"></div>
+        <MicIcon className="relative h-7 w-7 text-white z-10" />
+        
+        {/* 글로우 효과 - 버튼 뒤에 위치 */}
+        <div 
+          className="absolute inset-0 rounded-full -z-10"
+          style={{
+            background: 'radial-gradient(circle, rgb(108, 81, 199) 0%, transparent 70%)',
+            filter: 'blur(8px)',
+            transform: 'scale(1.5)'
+          }}
+        ></div>
+        
       </button>
     </div>
   );
