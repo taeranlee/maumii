@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import Layout from "../components/Layout";
@@ -6,6 +7,7 @@ import Title from "../components/Title";
 import Collapse from "../components/Collapse"
 
 export default function Register() {
+    const navigate = useNavigate();
     const [name, setName] = useState("");
     const [userId, setUserId] = useState("");
     const [pw, setPw] = useState("");
@@ -18,8 +20,13 @@ export default function Register() {
     const canSubmit = name && userId && pw && pw2 && !pwMismatch && phone && code;
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!canSubmit) return;
-        console.log({ name, userId, pw, pw2, phone, code });
+        if (!canSubmit) {
+            alert("빈 곳을 채워주세요");
+            return ;
+        }
+
+        const payload = { name, userId, pw, phone };
+        navigate("/register/detail", { state: payload });
     };
     
     return (
@@ -29,7 +36,7 @@ export default function Register() {
             className="flex-1 overflow-y-auto bg-white"
         >
         <Title variant="auth">회원가입</Title>
-        <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-4">
+        <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-3">
             <Input
                 label="이름"
                 placeholder="이름을 입력해 주세요"
@@ -92,7 +99,7 @@ export default function Register() {
                 </div>
             </Collapse>
 
-            <div className="pt-2 space-y-2">
+            <div className="pt-2 space-y-1">
                 <Button full type="submit">
                     다음
                 </Button>
