@@ -49,7 +49,6 @@ export default function RegisterDetail() {
   if (!state) return null;
 
   return (
-    <Layout>
       <form onSubmit={handleFinish} className="flex-1 bg-white">
         
         <Title variant="auth">회원가입</Title>
@@ -124,6 +123,5 @@ export default function RegisterDetail() {
           </div>
         </div>
       </form>
-    </Layout>
   );
 }

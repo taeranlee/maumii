@@ -30,7 +30,6 @@ export default function Register() {
     };
     
     return (
-    <Layout>
         <form
             onSubmit={handleSubmit}
             className="flex-1 overflow-y-auto bg-white"
@@ -110,6 +109,5 @@ export default function Register() {
         </div>
     </form>
         
-    </Layout>
   );
 }

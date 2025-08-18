@@ -21,9 +21,9 @@ export default function Login() {
         navigate("/record", { state: payload });
     };
     return (
-        <Layout>
+        <form onSubmit={handleSubmit} className="flex-1 bg-white">
             <Title variant="auth">로그인</Title>
-            <form onSubmit={handleSubmit} className="flex-1 bg-white">
+            
                 <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-4">
                     <Input
                         label="아이디"
@@ -67,6 +67,6 @@ export default function Login() {
                     </Button>
                 </div>
             </form>
-        </Layout>
+    
     );
 }
