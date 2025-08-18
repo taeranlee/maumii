@@ -34,7 +34,7 @@ export default function Input({
           "bg-white text-slate-900 placeholder:text-slate-400",
           "shadow-sm outline-none transition",
           error
-            ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+            ? "border-primary focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
             : "border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
         ].join(" ")}
         {...props}

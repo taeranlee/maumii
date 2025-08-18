@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import Layout from "./Layout";
 
 /** 사용법
  * <BottomNav active="mic" onChange={(key) => setActive(key)} />
@@ -16,16 +15,16 @@ export default function Navigation({ active = "mic", onChange }) {
   // 색상(활성/비활성)
   const tone = useMemo(
     () => ({
-      icon: (k) => (is(k) ? "text-purple-700" : "text-slate-400"),
-      text: (k) => (is(k) ? "text-purple-700" : "text-slate-400"),
+      icon: (k) => (is(k) ? "text-icon" : "text-button-none"),
+      text: (k) => (is(k) ? "text-icon" : "text-button-none"),
     }),
     [active]
   );
 
   return (
-   <div className="relative w-full max-w-[390px] mx-auto">
+    <div className="relative w-full">
       {/* 배경 바 */}
-      <div className="relative z-0 flex items-center justify-between rounded-3xl bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      <div className="relative z-10 flex items-center justify-around gap-20 rounded-t-3xl rounded-b-none bg-white p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.25)]">
         {/* 왼쪽 탭: 기록 */}
         <button
           type="button"
@@ -54,20 +53,32 @@ export default function Navigation({ active = "mic", onChange }) {
       {/* 상단 볼록-노치(배경) */}
       <div
         aria-hidden
-        className="absolute left-1/2 top-0 z-10 h-10 w-10 -translate-x-1/2 -translate-y-1/4 rounded-full bg-white shadow-[0_6px_18px_rgba(0,0,0,0.12)]"
+        className="absolute left-1/2 top-0 z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/4 rounded-full bg-white "
       />
 
       {/* 가운데 플로팅 마이크 버튼 */}
       <button
         type="button"
         onClick={() => onChange?.("mic")}
-        className={`group absolute left-1/2 top-0 z-20 grid h-14 w-14 -translate-x-1/2 -translate-y-1/4 place-items-center rounded-full
-          bg-purple-600 ring-8 ring-white transition
+        className={`group absolute left-1/2 top-0 z-30 grid h-16 w-16 -translate-x-1/2 -translate-y-1/4 place-items-center rounded-full
+          bg-button-nav ring-8 ring-white transition shadow-[0_-10px_10px_rgba(0,0,0,0.25)]
           hover:scale-105 active:scale-95
           ${is("mic") ? "" : ""}`}
         aria-current={is("mic") ? "page" : undefined}
       >
-        <MicIcon className="h-5 w-5 text-white" />
+        <div className="absolute inset-0 rounded-full bg-button-nav"></div>
+        <MicIcon className="relative h-7 w-7 text-white z-10" />
+        
+        {/* 글로우 효과 - 버튼 뒤에 위치 */}
+        <div 
+          className="absolute inset-0 rounded-full -z-10"
+          style={{
+            background: 'radial-gradient(circle, rgb(108, 81, 199) 0%, transparent 70%)',
+            filter: 'blur(8px)',
+            transform: 'scale(1.5)'
+          }}
+        ></div>
+        
       </button>
     </div>
   );

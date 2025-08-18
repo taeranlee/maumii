@@ -1,10 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html","./src/**/*.{js,jsx,ts,tsx}"],
-  theme: { 
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
     extend: {
       fontFamily: {
-        sans: ["Pretendard", "sans-serif"], 
+        sans: ["Pretendard", "sans-serif"],
       },
       fontSize: {
         sm: ['14px', '20px'],
@@ -13,18 +13,17 @@ export default {
         xl: ['24px', '32px'],
       },
       colors: {
-        primary: "#A960B0" ,
+        primary: "#A960B0",
         background: "#F8F6FF",
-        notice: "#F9E000",  
+        notice: "#F9E000",
         white: "#ffffff",
         icon: "#440183",
-        notice : "#f9e000",
-
         button: {
-        send:  "rgba(166,144,255,0.4)", 
-        nav: "#6C51C7", 
-        record: "#6D65F8",
-        edit : "#A690FF"
+          none: "#9DB2CE",
+          send: "rgba(166,144,255,0.4)",
+          nav: "#6C51C7",
+          record: "#6D65F8",
+          edit: "#A690FF",
         },
         cloud: {
           partner: "#BDD6F3",
@@ -44,4 +43,4 @@ export default {
     }
   },
   plugins: [],
-}
+};
