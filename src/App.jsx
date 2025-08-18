@@ -29,7 +29,6 @@ export default function App() {
           <Route path="/mypage/protector" element={<MyPageProtector />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/register/detail" element={<RegisterDetail />} />
           <Route path="*" element={<div className="p-6">Not Found</div>} />
         </Routes>
     </Layout>

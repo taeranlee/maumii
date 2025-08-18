@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   const keyToPath = { record: "/", mic: "/record", mypage: "/mypage" };
 
   const active = pathToKey[location.pathname] ?? "record";
-  const hideNav = ["/login", "/register", "/register/detail"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
+  const hideNav = ["/login", "/register", "/register/detail","/"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
 
   return (
     <div className="h-full md:grid md:place-items-center md:bg-slate-200">
