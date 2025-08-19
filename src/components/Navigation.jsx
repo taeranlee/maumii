@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { FaBoxArchive } from "react-icons/fa6";
+import { IoPerson } from "react-icons/io5";
 
 /** 사용법
  * <BottomNav active="mic" onChange={(key) => setActive(key)} />
@@ -29,7 +31,7 @@ export default function Navigation({ active = "mic", onChange }) {
         <button
           type="button"
           onClick={() => onChange?.("record")}
-          className={`${tabBase} ${is("record") ? "bg-white" : ""}`}
+          className={`${tabBase} ${is("record") ? "text-white" : ""}`}
           aria-current={is("record") ? "page" : undefined}
         >
           <ArchiveIcon className={`h-5 w-5 ${tone.icon("record")}`} />
@@ -91,16 +93,7 @@ export default function Navigation({ active = "mic", onChange }) {
 
 /* --- 간단 SVG 아이콘 (의존성 없이 사용) --- */
 function ArchiveIcon({ className = "" }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M3 4.75A1.75 1.75 0 0 1 4.75 3h14.5A1.75 1.75 0 0 1 21 4.75v2.5A1.75 1.75 0 0 1 19.25 9H4.75A1.75 1.75 0 0 1 3 7.25v-2.5Zm2 .25h14v2H5v-2Zm0 5h14v8.25A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 18.25V10Zm4 3.5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z" />
-    </svg>
-  );
+  return <FaBoxArchive className={className} />;
 }
 function MicIcon({ className = "" }) {
   return (
@@ -116,13 +109,6 @@ function MicIcon({ className = "" }) {
 }
 function UserIcon({ className = "" }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.76-3.58-5-8-5Z" />
-    </svg>
+    <IoPerson className={className}/>
   );
 }

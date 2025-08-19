@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaCirclePlus } from "react-icons/fa6";
 
-export default function MypageProtector() {
+export default function Protector() {
     const [email, setEmail] = useState("");
     const [code, setCode] = useState(""); // 인증코드
     const [list, setList] = useState([]); // 등록된 이메일 리스트
@@ -77,7 +77,7 @@ export default function MypageProtector() {
             </div>
 
             <div className="px-6 my-10 cursor-pointer">
-                <div className="place-items-center border py-1" style={{borderRadius:'5px'}} onClick={() => setShowCodeInput(true)}>
+                <div className="grid place-items-center border py-1" style={{borderRadius:'5px'}} onClick={() => setShowCodeInput(true)}>
                     <FaCirclePlus className="text-primary"/>
                 </div>
             </div>
