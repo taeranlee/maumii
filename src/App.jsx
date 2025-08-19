@@ -11,6 +11,7 @@ import MyPageProtector from "./pages/MyPageProtector.jsx";
 import Navigation from "./components/Navigation.jsx";
 import RegisterDetail from "./pages/RegisterDetail.jsx";
 import RecordDetail from "./pages/RecordDetail.jsx";
+import Record from "./pages/Record.jsx";
 import Layout from "./components/Layout.jsx";
 
 export default function App() {
@@ -18,10 +19,7 @@ export default function App() {
     <Layout>
         <Routes>
           <Route path="/" element={<Intro />} />
-          <Route
-            path="/record"
-            element={<div className="p-6">녹음 페이지</div>}
-          />
+          <Route path="/record" element={<Record />} />
           <Route path="/mypage" element={<Mypage />} />
           <Route path="/record-list" element={<RecordList />} />
           <Route path="/record-list/:id" element={<RecordDetail />} />
