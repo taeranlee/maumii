@@ -7,7 +7,7 @@ import Login from "./pages/Login.jsx";
 import Navigation from "./components/Navigation.jsx";
 import Mypage from "./pages/Mypage.jsx";
 import MypageEdit from "./pages/MypageEdit.jsx";
-// import MypageProtector from "./pages/MypageProtector.jsx"
+import Protector from "./pages/Protector.jsx"
 import MypageTheme from "./pages/MypageTheme.jsx";
 import Record from "./pages/Record.jsx";
 import RecordList from "./pages/RecordList.jsx";
@@ -25,7 +25,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/mypage" element={<Mypage />} />
           <Route path="/mypage/edit" element={<MypageEdit />} />
-          {/* <Route path="/mypage/protector" element={<MypageProtector />} /> */}
+          <Route path="/mypage/protector" element={<Protector />} />
           <Route path="/mypage/theme" element={<MypageTheme />} />
           <Route path="/record" element={<Record />} />
           <Route path="/record-list" element={<RecordList />} />
