@@ -77,7 +77,7 @@ export default function Protector() {
             </div>
 
             <div className="px-6 my-10 cursor-pointer">
-                <div className="place-items-center border py-1" style={{borderRadius:'5px'}} onClick={() => setShowCodeInput(true)}>
+                <div className="grid place-items-center border py-1" style={{borderRadius:'5px'}} onClick={() => setShowCodeInput(true)}>
                     <FaCirclePlus className="text-primary"/>
                 </div>
             </div>
