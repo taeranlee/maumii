@@ -116,8 +116,8 @@ export default function Intro() {
           background: "rgba(247, 188, 205, 0.7)",
         }}
         animate={{
-          x: [0, 30, 15, 25, 0],
-          y: [0, 20, 10, 15, 0],
+          x: [0, 30, 45, 25, 0],
+          y: [0, 20, 35, 25, 0],
           scale: [1, 1.3, 0.7, 1.2, 1],
         }}
         transition={{
@@ -136,7 +136,7 @@ export default function Intro() {
           background: "rgba(225, 149, 230, 0.4)",
         }}
         animate={{
-          x: [0, 40, 15, 0],
+          x: [0, 60, 10, 0],
           y: [0, 30, 50, 0],
           rotate: [0, 180, 360],
         }}
@@ -155,8 +155,8 @@ export default function Intro() {
           background: "rgba(252, 131, 88, 0.5)",
         }}
         animate={{
-          x: [0, 10, 15, 10, 25, 0],
-          y: [0, 10, 15, 5, 15, 0],
+          x: [0, 10, 20, 10, 35, 0],
+          y: [0, 20, 35, 15, 25, 0],
           scale: [1, 1.1, 0.95, 1.05, 0.9, 1],
         }}
         transition={{
@@ -175,8 +175,8 @@ export default function Intro() {
           background: "rgba(253, 232, 185, 0.6)",
         }}
         animate={{
-          x: [0, 2, 0],
-          y: [0, 20, 0],
+          x: [0, 10, 0],
+          y: [0, 35, 0],
           rotate: [0, 180, 360],
           scale: [1, 1.2, 1],
         }}
