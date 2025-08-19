@@ -78,8 +78,13 @@ export default function Navigation({ active = "mic", onChange }) {
             transform: 'scale(1.5)'
           }}
         ></div>
-        
       </button>
+      {/* 마이크 버튼 아래 텍스트 */}
+      <div className="absolute left-1/2 top-12 z-30 -translate-x-1/2">
+        <span className={`${labelBase} ${tone.text("mic")} transition`}>
+          녹음
+        </span>
+      </div>
     </div>
   );
 }

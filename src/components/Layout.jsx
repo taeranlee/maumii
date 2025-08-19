@@ -8,7 +8,7 @@ export default function Layout({ children }) {
 
   // 경로 ↔ 탭 키 매핑 (원하는 대로 수정 가능)
   const pathToKey = { "/": "record", "/record": "mic", "/mypage": "mypage" };
-  const keyToPath = { record: "/", mic: "/record", mypage: "/mypage" };
+  const keyToPath = { record: "/record-list", mic: "/record", mypage: "/mypage" };
 
   const active = pathToKey[location.pathname] ?? "record";
   const hideNav = ["/login", "/register", "/register/detail","/"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
