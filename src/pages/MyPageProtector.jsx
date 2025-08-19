@@ -3,20 +3,23 @@ import axios from "axios";
 import Title from "../components/Title";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import Collapse from "../components/Collapse";
+import ConfirmModal from "../components/ConfirmModal";
 import { Link } from "react-router-dom";
-import Collapse from "../components/Collapse"
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaCirclePlus } from "react-icons/fa6";
 
 export default function MyPageProtector() {
     const [email, setEmail] = useState("");
-    const [code, setCode] = useState("");
-    const [list, setList] = useState([]);
-    const [showCodeInput, setShowCodeInput] = useState(false);
+    const [code, setCode] = useState(""); // 인증코드
+    const [list, setList] = useState([]); // 등록된 이메일 리스트
+    const [showCodeInput, setShowCodeInput] = useState(false); // 추가 폼
+    const [open, setOpen] = useState(false); // 모달 열린 상태
+    const [targetEmail ,setTargetEmail] = useState(null); // 모달 DOM을 하나만 두기 위해 삭제할 이메일 저장
 
     // 처음 렌더링 시 DB에서 기존 데이터 불러오기
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchEmails = async () => {
             try {
                 const res = await axios.get("/mypage/protector");
                 setList(res.data);
@@ -24,7 +27,7 @@ export default function MyPageProtector() {
                 console.log("API 에러: ", error);
             }
         };
-        fetchData();
+        fetchEmails();
     }, []);
 
     // 버튼 클릭 시 DB에 저장 + 화면 비동기 업데이트
@@ -36,7 +39,25 @@ export default function MyPageProtector() {
         }
         const res = await axios.post("/mypage/protector", { email });
         setList((prev) => [...prev, res.data]); // 화면 비동기 업데이트
-    }
+    };
+
+    // 삭제 버튼 클릭 시 DB에서 삭제 + 화면 비동기 업데이트 
+    const handleDelete = async () => {
+        if(!targetEmail) return;
+        try {
+            await fetch("/api/emails/${targetEmail}", {
+                method: "DELETE",
+            });
+            // 로컬 state 에서도 targetEmail 삭제 
+            setList((prev) => prev.filter((item) => item != targetEmail));
+            // 모달 달기
+            setOpen(false); // 모달 닫기
+            setTargetEmail(null);
+        } catch(error) {
+            console.error("보호자 이메일 삭제 실패 : ", error);
+            alert("이메일 삭제 중 오류가 발생했습니다.");
+        }
+    };
 
     return (
         <div className="mx-auto w-full max-w-[330px]">
@@ -44,19 +65,14 @@ export default function MyPageProtector() {
             <div className="px-6 space-y-3 mb-4">
                 <span className="font-bold text-gray-500">등록된 이메일</span>
                 {/* DB 에서 보호자 목록 불러올 때
-                {list.map((u, i) => (
-                    <div className="bg-gray-100 flex justify-between items-center px-2 py-2 shadow-[0_2px_4px_rgba(0,0,0,0.25)]" style={{borderRadius:'10px'}}>
-                        <span className="pl-2 font-bold text-gray-700">kosamsa3@gmail.com</span>
-                        <Link to="/">
-                            <span className="bg-white text-sm px-2 py-1" style={{borderRadius:'10px'}}>삭제</span>
-                        </Link>
-                    </div>
+                {list.map((email) => (
+                    <div> 넣기
                 ))}  */}
                 <div className="bg-gray-100 flex justify-between items-center px-2 py-2 shadow-[0_2px_4px_rgba(0,0,0,0.25)]" style={{borderRadius:'10px'}}>
                     <span className="pl-2 font-bold text-gray-700">kosamsa3@gmail.com</span>
-                    <Link to="/">
+                    <button onClick={() => { setTargetEmail(email); setOpen(true); }}>
                         <span className="bg-white text-sm px-2 py-1" style={{borderRadius:'10px'}}>삭제</span>
-                    </Link>
+                    </button>
                 </div>
             </div>
 
@@ -65,6 +81,17 @@ export default function MyPageProtector() {
                     <FaCirclePlus className="text-primary"/>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={open}
+                title="보호자 이메일을 삭제하시겠습니까?"
+                description="보호자 해제 메일이 발송됩니다."
+                onConfirm={handleDelete}
+                onCancel={() => {
+                    setOpen(false);
+                    setTargetEmail(null);
+                }}
+            />
 
             <Collapse show={showCodeInput} duration={350}>
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto bg-white">
