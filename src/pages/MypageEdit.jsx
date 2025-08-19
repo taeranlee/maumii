@@ -12,11 +12,11 @@ export default function MypageEdit() {
             <h2 className="text-lg font-bold" style={{letterSpacing: '5px', display: 'inline-block'}}>김이름</h2>
         </div>
         <div className="mt-6 space-y-5">
-          <Link to="/" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">전화번호 변경하기</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
-          <Link to="/" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">비밀번호 변경하기</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
