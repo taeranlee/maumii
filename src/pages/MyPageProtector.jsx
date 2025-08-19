@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaCirclePlus } from "react-icons/fa6";
 
-export default function MyPageProtector() {
+export default function MypageProtector() {
     const [email, setEmail] = useState("");
     const [code, setCode] = useState(""); // 인증코드
     const [list, setList] = useState([]); // 등록된 이메일 리스트

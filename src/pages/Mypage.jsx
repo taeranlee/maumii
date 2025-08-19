@@ -12,23 +12,23 @@ export default function Mypage() {
             <h2 className="text-lg font-bold" style={{letterSpacing: '5px', display: 'inline-block'}}>김이름</h2>
         </div>
         <div className="mt-6 space-y-5">
-          <Link to="/mypage/edit" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/mypage/edit" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">프로필 정보 변경</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
-          <Link to="/mypage/protector" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/mypage/protector" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">나의 보호자 관리</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
-          <Link to="/" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">나의 대화 기록</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
-          <Link to="/" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/mypage/theme" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">테마 변경</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
-          <Link to="/" className="w-full h-7 px-14 flex justify-between items-center">
+          <Link to="/" className="h-7 mx-14 flex justify-between items-center">
             <span className="font-bold text-gray-500">오디오 설정</span>
             <IoIosArrowForward className="text-gray-500" />
           </Link>
