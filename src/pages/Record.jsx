@@ -1,18 +1,24 @@
 import { FaBook } from "react-icons/fa";
 import { FiHelpCircle } from "react-icons/fi";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import HelpScreen from "./HelpScreen";
 
 export default function Record() {
     const [isRecording, setIsRecording] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
 
-    return(
+    return (
         <div className="bg-text-200 h-full">
             <div className="flex justify-between">
                 <div className="m-8">
-                    <FaBook className="cursor-pointer text-white h-5 w-5"/>
+                    <FaBook className="cursor-pointer text-white h-5 w-5" />
                 </div>
                 <div className="m-8">
-                    <FiHelpCircle className="cursor-pointer text-white h-6 w-6"/>
+                    <FiHelpCircle
+                        onClick={() => setShowHelp(true)}
+                        className="cursor-pointer text-white h-6 w-6"
+                    />
                 </div>
             </div>
 
@@ -24,9 +30,9 @@ export default function Record() {
             </div>
 
             {/* main 여기서 여러가지 비동기 동작 */}
-            <div className="h-[50%] grid place-items-center">
+            <div className="h-[40%] grid place-items-center">
                 <div className="flex flex-col items-center">
-                    <img src="src/assets/images/구르미.svg" alt=""/>
+                    <img src="src/assets/images/구르미.svg" alt="" />
                     <div className="text-white mt-2 font-semibold">새로운 녹음</div>
                 </div>
             </div>
@@ -37,6 +43,20 @@ export default function Record() {
                     <img src="src/assets/images/구르미.svg"></img>
                 </span>
             </div>
+             {/* 도움말 오버레이 (fade) */}
+            <AnimatePresence>
+                {showHelp && (
+                <motion.div
+                    className="absolute inset-0 z-50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <HelpScreen onClose={() => setShowHelp(false)} />
+                </motion.div>
+                )}
+            </AnimatePresence>
 
         </div>
     );
