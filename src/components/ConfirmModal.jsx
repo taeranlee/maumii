@@ -6,7 +6,7 @@ export default function ConfirmModal({
   description,
   onConfirm,
   onCancel,
-  children, // ✅ 추가: input/select 같은 요소 받기
+  children,
 }) {
   if (!isOpen) return null;
 
@@ -22,7 +22,7 @@ export default function ConfirmModal({
         {/* 제목 */}
         <h2 className="text-400 font-bold mb-8">{title}</h2>
 
-        {/* ✅ children 자리 → input/select 등 삽입 */}
+        {/* input/select 등 삽입 */}
         {children && <div className="mb-6">{children}</div>}
 
         <hr></hr>
