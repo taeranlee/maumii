@@ -12,6 +12,7 @@ import MypageTheme from "./pages/MypageTheme.jsx";
 import Record from "./pages/Record.jsx";
 import RecordList from "./pages/RecordList.jsx";
 import RecordDetail from "./pages/RecordDetail.jsx";
+import Emotion from "./pages/EmotionCard.jsx";
 import Layout from "./components/Layout.jsx";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/record" element={<Record />} />
           <Route path="/record-list" element={<RecordList />} />
           <Route path="/record-list/:id" element={<RecordDetail />} />
+          <Route path="/emotion" element={<Emotion />} />
         </Routes>
     </Layout>
   );
