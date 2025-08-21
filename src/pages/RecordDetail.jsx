@@ -5,6 +5,7 @@ import { FiTrash2 } from "react-icons/fi";
 import SectionHeader from "../components/RecordingHeader";
 import Bubble from "../components/Bubble";
 import { createPortal } from "react-dom";
+import { useRef, useEffect } from "react";
 
 // 샘플 데이터
 const sampleSections = [
@@ -17,8 +18,7 @@ const sampleSections = [
       {
         id: 3,
         me: true,
-        text:
-          "왜냐하면 내가 쇼핑을 했는데\n진짜 잘생긴 사람이 옆에 지나갔어!!\n너도 봤었으면 좋았을 텐데 아쉽다!",
+        text: "왜냐하면 내가 쇼핑을 했는데\n진짜 잘생긴 사람이 옆에 지나갔어!!\n너도 봤었으면 좋았을 텐데 아쉽다!",
         sub: "6분",
       },
       { id: 4, me: false, text: "와 진짜 화난다 너만 본거야?", sub: "10분" },
@@ -54,6 +54,8 @@ export default function RecordDetail() {
   // 데이터
   const [sections, setSections] = useState(sampleSections);
 
+  const canvasRef = useRef(null);
+
   const toggleSection = (sid) => {
     setSelectedSectionIds((prev) =>
       prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]
@@ -62,7 +64,9 @@ export default function RecordDetail() {
 
   const handleDeleteSections = () => {
     if (selectedSectionIds.length === 0) return;
-    setSections((prev) => prev.filter((s) => !selectedSectionIds.includes(s.id)));
+    setSections((prev) =>
+      prev.filter((s) => !selectedSectionIds.includes(s.id))
+    );
     setSelectedSectionIds([]);
     setSelectMode(false);
   };
@@ -81,7 +85,9 @@ export default function RecordDetail() {
           : {
               ...s,
               talks: s.talks.map((t) =>
-                t.id === editingTalk.talkId ? { ...t, text: editingTalk.text } : t
+                t.id === editingTalk.talkId
+                  ? { ...t, text: editingTalk.text }
+                  : t
               ),
             }
       )
@@ -90,15 +96,35 @@ export default function RecordDetail() {
     setEditingTalk(null);
   };
 
+  useEffect(() => {
+    if (!sheetOpen) return;
+
+    const prev = {
+      overflow: document.body.style.overflow,
+      touchAction: document.body.style.touchAction,
+    };
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none"; // iOS에서 튕김 방지
+
+    return () => {
+      document.body.style.overflow = prev.overflow;
+      document.body.style.touchAction = prev.touchAction;
+    };
+  }, [sheetOpen]);
+
   // 탭바 높이가 있으면 조절 (없으면 0)
-  const TABBAR_H = 84;
+  const TABBAR_H = 100;
 
   return (
     <div
+      ref={canvasRef}
       className={
-        (sheetOpen ? "relative h-[100svh] overflow-hidden"
-                   : "relative h-[100svh] overflow-y-auto pb-24") +
-        " bg-background md:max-w-[390px] md:mx-auto rounded-3xl"
+        "relative w-full bg-background " +
+        (sheetOpen
+          ? "overflow-hidden overscroll-none"
+          : "overflow-y-auto pb-24") +
+        // ▼ 모바일: dvh, 데스크탑: svh + 중앙 정렬/라운드
+        " h-[111dvh] md:h-[100svh] md:max-w-[390px] md:mx-auto md:rounded-xl"
       }
     >
       {/* HEADER */}
@@ -124,7 +150,6 @@ export default function RecordDetail() {
                   className="flex items-center gap-1 text-sm text-red-600"
                 >
                   <FiTrash2 className="w-4 h-4 -top-[1px] relative" />
-                  <span>삭제</span>
                 </button>
                 <button
                   onClick={() => {
@@ -143,15 +168,19 @@ export default function RecordDetail() {
                   className="flex items-center gap-2 text-sm text-slate-600"
                 >
                   {isEditingTitle ? (
-                    <span className="px-2 py-1 rounded-md bg-slate-800 text-white">저장</span>
+                    <span className="px-2 py-1 rounded-md bg-button-edit text-white">
+                      저장
+                    </span>
                   ) : (
                     <>
                       <FaRegEdit className="w-4 h-4 -top-[1px] relative" />
-                      <span>수정</span>
                     </>
                   )}
                 </button>
-                <button onClick={() => setSelectMode(true)} className="text-sm text-slate-600">
+                <button
+                  onClick={() => setSelectMode(true)}
+                  className="text-sm text-slate-600"
+                >
                   선택
                 </button>
               </>
@@ -203,59 +232,62 @@ export default function RecordDetail() {
         })}
       </div>
 
-      {/* ===== Bottom Sheet: 포털로 화면 하단 고정 + 카드 영역만 덮기 ===== */}
-      {sheetOpen && editingTalk &&
+      {/* ===== Bottom Sheet: 포털로 화면 하단 고정 ===== */}
+      {sheetOpen &&
+        editingTalk &&
+        canvasRef.current &&
         createPortal(
-          <div className="fixed inset-0 z-50">
-            {/* 카드 영역만 포커스 받도록 중앙에 폭 제한 */}
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[100svh] w-full md:max-w-[390px] pointer-events-auto">
-              {/* dim: 카드 영역만 어둡게 */}
-              <div
-                className="absolute inset-0 rounded-3xl bg-black/40"
-                onClick={() => setSheetOpen(false)}
-              />
-              {/* 시트: 화면 하단 고정, 탭바 높이만큼 띄움 */}
-              <div
-                className="absolute left-0 right-0"
-                style={{ bottom: `${TABBAR_H}px` }} // 탭바 없으면 0으로
-              >
+          <div className="absolute inset-0 z-50">
+            {/* dim: 레이아웃 영역만 어둡게 (모서리 맞춤) */}
+            <div
+              className="absolute inset-0 bg-black/40 rounded-3xl"
+              onClick={() => setSheetOpen(false)}
+            />
+
+            {/* 시트: 레이아웃 하단에 붙이기 (래퍼 기준) */}
+            <div
+              className="fixed left-1/2 -translate-x-1/2 md:translate-y-12 translate-y-[98px] w-full md:max-w-[390px] pointer-events-none"
+              style={{
+                bottom: `calc(${TABBAR_H}px)`,
+              }}
+            >
+              <div className="pointer-events-auto w-full rounded-b-2xl rounded-t-[40px] bg-white shadow-xl">
+                <div className="text-lg font-semibold mb-3 mt-3 py-6 text-center">
+                  녹음 내용 수정하기
+                </div>
+
                 <div className="px-4 pb-4">
-                  <div className="rounded-t-[40px] bg-white p-4 shadow-xl">
-                    <div className="text-lg font-semibold mb-3 mt-1 text-center">
-                      녹음 내용 수정하기
-                    </div>
-                    <textarea
-                      className="w-full min-h-[140px] rounded-xl border border-slate-200 p-3 outline-none"
-                      value={editingTalk.text}
-                      onChange={(e) =>
-                        setEditingTalk((prev) =>
-                          prev ? { ...prev, text: e.target.value } : prev
-                        )
-                      }
-                    />
-                    <div className="flex justify-end gap-2 mt-3">
-                      <button
-                        className="px-4 py-2 rounded-xl border border-slate-300"
-                        onClick={() => {
-                          setSheetOpen(false);
-                          setEditingTalk(null);
-                        }}
-                      >
-                        취소
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded-xl bg-purple-600 text-white"
-                        onClick={saveTalkText}
-                      >
-                        저장
-                      </button>
-                    </div>
+                  <textarea
+                    className="w-full min-h-[140px] rounded-xl border border-slate-200 p-3 outline-none"
+                    value={editingTalk.text}
+                    onChange={(e) =>
+                      setEditingTalk((prev) =>
+                        prev ? { ...prev, text: e.target.value } : prev
+                      )
+                    }
+                  />
+                  <div className="flex justify-end gap-2 mt-3">
+                    <button
+                      className="px-4 py-2 rounded-xl border border-slate-300"
+                      onClick={() => {
+                        setSheetOpen(false);
+                        setEditingTalk(null);
+                      }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-xl bg-purple-600 text-white"
+                      onClick={saveTalkText}
+                    >
+                      저장
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>,
-          document.body
+          canvasRef.current // ★ document.body 대신 레이아웃 노드
         )}
     </div>
   );
