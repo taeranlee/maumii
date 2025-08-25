@@ -3,16 +3,21 @@ import { FiHelpCircle } from "react-icons/fi";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import HelpScreen from "./HelpScreen";
+import EmotionCard from "./EmotionCard";
 
 export default function Record() {
     const [isRecording, setIsRecording] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
+    const [showEmotion, setShowEmotion] = useState(false);
 
     return (
         <div className="bg-text-200 h-full">
             <div className="flex justify-between">
                 <div className="m-8">
-                    <FaBook className="cursor-pointer text-white h-5 w-5" />
+                    <FaBook 
+                    onClick={() => setShowEmotion(true)}
+                    className="cursor-pointer text-white h-5 w-5" 
+                    />
                 </div>
                 <div className="m-8">
                     <FiHelpCircle
@@ -57,7 +62,22 @@ export default function Record() {
                 </motion.div>
                 )}
             </AnimatePresence>
-
+            
+            {/* 감정 카드 오버레이 */}
+            <AnimatePresence>
+                {showEmotion && (
+                <motion.div
+                    className="absolute inset-0 z-50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <EmotionCard onClose={() => setShowEmotion(false)} />
+                </motion.div>
+                )}
+            </AnimatePresence>
+            
         </div>
     );
 }
