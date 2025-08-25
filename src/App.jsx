@@ -10,6 +10,7 @@ import MypageEdit from "./pages/MypageEdit.jsx";
 import Protector from "./pages/Protector.jsx"
 import MypageTheme from "./pages/MypageTheme.jsx";
 import Record from "./pages/Record.jsx";
+import RecordTest from "./pages/RecordTest.jsx";
 import RecordList from "./pages/RecordList.jsx";
 import RecordDetail from "./pages/RecordDetail.jsx";
 import Emotion from "./pages/EmotionCard.jsx";
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/mypage/protector" element={<Protector />} />
           <Route path="/mypage/theme" element={<MypageTheme />} />
           <Route path="/record" element={<Record />} />
+          <Route path="/record-test" element={<RecordTest />} />
           <Route path="/record-list" element={<RecordList />} />
           <Route path="/record-list/:id" element={<RecordDetail />} />
           <Route path="/emotion" element={<Emotion />} />
