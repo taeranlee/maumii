@@ -4,11 +4,13 @@ import { FaBook } from "react-icons/fa";
 import { FiHelpCircle } from "react-icons/fi";
 import HelpScreen from "./HelpScreen";
 import EmotionCard from "./EmotionCard";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Record() {
   const [sessionBubbles, setSessionBubbles] = useState([]); // ✅ 세션 버퍼
   const [heroId, setHeroId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showEmotion, setShowEmotion] = useState(false);
   const commitLockRef = useRef(false);
   const [connected, setConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -254,7 +256,9 @@ export default function Record() {
     <div className="h-full bg-text-200 flex flex-col">
       {/* 헤더 */}
       <div className="flex justify-between items-center px-6 py-4">
-        <FaBook className="text-white h-5 w-5" />
+        <FaBook className="text-white h-5 w-5" 
+        onClick={() => setShowEmotion(true)}
+        />
         <div className="text-sm text-white/80">WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}</div>
         <FiHelpCircle className="text-white h-6 w-6" onClick={() => setShowHelp(true)} />
       </div>
@@ -300,6 +304,7 @@ export default function Record() {
                 {(composing.text ? composing.text + (partialText ? " " : "") : "") + (partialText || "")}
               </div>
             </div>
+          )}
              {/* 도움말 오버레이 (fade) */}
             <AnimatePresence>
                 {showHelp && (
@@ -329,8 +334,7 @@ export default function Record() {
                 </motion.div>
                 )}
             </AnimatePresence>
-            
-          )}
+          
 
           <div ref={listEndRef} />
         </div>
