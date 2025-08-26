@@ -15,7 +15,7 @@ const defaultHero = new URL("../assets/images/cloud_calm.png", import.meta.url).
 function getEmotionImg(label) {
   if(!label) return defaultHero;
   const key = `../assets/images/cloud_${label}.png`;
-  console.log("label : "+label);
+  // console.log("label : "+label);
   return emotionImgs[key] ?? defaultHero;
 }
 
@@ -282,8 +282,8 @@ export default function Record() {
       {/* 상단: 상대 버튼 */}
       <div
         onClick={onPartnerClick}
-        className={`cursor-pointer mx-auto w-24 h-24 rounded-full bg-white border-4 flex items-center justify-center 
-          ${isRecording && role === "partner" ? "border-green-500" : "border-cloud-partner"}`}
+        className={`cursor-pointer mx-auto w-20 h-20 rounded-full bg-white border-4 flex items-center justify-center 
+          ${isRecording && role === "partner" ? "border-cloud-parter" : "border-cloud-partner"}`}
         title={isRecording && role === "partner" ? "녹음 종료" : "상대방 녹음 시작"}
       >
         <span className="text-base font-semibold">상대</span>
@@ -291,7 +291,7 @@ export default function Record() {
 
       {/* 중앙: 실시간/채팅 */}
       <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-56">
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
           {chat.map((m) => (
             <div key={m.id}>
               {m.id === heroId && (
@@ -302,7 +302,7 @@ export default function Record() {
               <div className={`flex ${m.who === "me" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap
-                    ${m.who === "me" ? "bg-blue-500 text-white rounded-br-md" : "bg-white text-slate-800 rounded-bl-md"}`}
+                    ${m.who === "me" ? "bg-cloud-mine text-text-400 rounded-br-md" : "bg-cloud-partner text-text-400 rounded-bl-md"}`}
                 >
                   {m.text}
                 </div>
@@ -314,8 +314,8 @@ export default function Record() {
           {composing.active && (
             <div className={`flex ${composing.who === "me" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 opacity-95 whitespace-pre-wrap
-                  ${composing.who === "me" ? "bg-blue-500 text-white rounded-br-md" : "bg-white text-slate-800 rounded-bl-md"}`}
+                className={`max-w-[85%] h-full px-4 py-3 rounded-2xl text-base leading-7 opacity-95 whitespace-pre-wrap
+                  ${composing.who === "me" ? "bg-cloud-mine text-white rounded-br-md" : "bg-cloud-partner text-slate-800 rounded-bl-md"}`}
               >
                 {(composing.text ? composing.text + (partialText ? " " : "") : "") + (partialText || "")}
               </div>
@@ -359,16 +359,16 @@ export default function Record() {
       {/* 하단: 내 버튼 */}
       <button
         onClick={onMeClick}
-        className={`fixed left-1/2 -translate-x-1/2 bottom-[115px] w-24 h-24 rounded-full bg-white border-4 
+        className={`fixed left-1/2 -translate-x-1/2 bottom-[160px] w-20 h-20 rounded-full bg-white border-4 
           shadow-xl flex items-center justify-center
-          ${isRecording && role === "me" ? "border-blue-500" : "border-cloud-mine"}`}
+          ${isRecording && role === "me" ? "border-cloud-partner" : "border-cloud-mine"}`}
       >
         <span className="text-base font-semibold">나</span>
       </button>
 
       {/* ✅ 결과 화면에서 '취소/저장' 버튼 (녹음이 끝났고 말풍선이 떠 있을 때만) */}
       {!isRecording && chat.length === 1 && (
-        <div className="fixed left-0 right-0 bottom-[70px] px-8 flex items-center justify-between text-white text-lg font-semibold select-none">
+        <div className="flex justify-around items-center p-3 mb-32 text-white text-lg font-semibold select-none">
           <button onClick={cancelSession} className="opacity-90">취소</button>
           
           <button onClick={saveSession} className="opacity-90">저장</button>
