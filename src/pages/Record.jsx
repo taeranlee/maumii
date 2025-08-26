@@ -292,6 +292,11 @@ export default function Record() {
       {/* 중앙: 실시간/채팅 */}
       <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
+          {!isRecording && chat.length === 0 && (
+            <div className="flex justify-center my-20">
+              <img src={defaultHero} alt="calm" className={HERO_IMG_CLASS} />
+            </div>
+          )}
           {chat.map((m) => (
             <div key={m.id}>
               {m.id === heroId && (
