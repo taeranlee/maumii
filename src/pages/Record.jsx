@@ -6,6 +6,19 @@ import HelpScreen from "./HelpScreen";
 import EmotionCard from "./EmotionCard";
 import { motion, AnimatePresence } from "framer-motion";
 
+const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
+  eager: true,
+  import: "default",
+});
+const defaultHero = new URL("../assets/images/cloud_calm.png", import.meta.url).href;
+
+function getEmotionImg(label) {
+  if(!label) return defaultHero;
+  const key = `../assets/images/cloud_${label}.png`;
+  console.log("label : "+label);
+  return emotionImgs[key] ?? defaultHero;
+}
+
 export default function Record() {
   const [sessionBubbles, setSessionBubbles] = useState([]); // ✅ 세션 버퍼
   const [heroId, setHeroId] = useState(null);
@@ -17,6 +30,7 @@ export default function Record() {
   const [role, setRole] = useState(null);
   const roleRef = useRef(null);
   const [saving, setSaving] = useState(false);
+  const [emotion, setEmotion] = useState("calm");
 
   const [partialText, setPartialText] = useState("");
   const [chat, setChat] = useState([]); // 화면에는 항상 최신 1개만 보여줌
@@ -184,6 +198,8 @@ export default function Record() {
       });
       const data = await res.json();
       console.log("✅ 서버 응답:", data);
+      const label = data?.label;
+      setEmotion(label);
     } catch (err) { console.error("❌ 서버 전송 실패:", err); }
   };
 
@@ -280,7 +296,7 @@ export default function Record() {
             <div key={m.id}>
               {m.id === heroId && (
                 <div className="flex justify-center my-4">
-                  <img src="src/assets/images/구르미.svg" alt="구르미" className={HERO_IMG_CLASS} />
+                  <img src={getEmotionImg(emotion)} alt={emotion || "hero"} className={HERO_IMG_CLASS} />
                 </div>
               )}
               <div className={`flex ${m.who === "me" ? "justify-end" : "justify-start"}`}>

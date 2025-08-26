@@ -29,7 +29,7 @@ const EMOTIONS = [
     {
         id: 4,
         name: "무서움",
-        description: ["이 표정은 상대방, 혹은 내가", "무서워하는 상태임을 말합니다.", "", "이럴 때는 진정시켜주는 말을 건내주세요!"],
+        description: ["이 표정은 상대방, 혹은 내가", "무서워하는 상태임을 말합니다.", "", "이럴 때는 진정시켜주는 말을 건네주세요!"],
         image: {
             cloud: "src/assets/images/구르미.svg",
             bear: "src/assets/images/maumi.svg"
