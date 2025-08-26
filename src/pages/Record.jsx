@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaBook } from "react-icons/fa";
 import { FiHelpCircle } from "react-icons/fi";
 import HelpScreen from "./HelpScreen";
+import EmotionCard from "./EmotionCard";
 
 export default function Record() {
   const [showHelp, setShowHelp] = useState(false);
@@ -271,6 +272,36 @@ export default function Record() {
                 {(composing.text ? composing.text + (partialText ? " " : "") : "") + (partialText || "")}
               </div>
             </div>
+             {/* 도움말 오버레이 (fade) */}
+            <AnimatePresence>
+                {showHelp && (
+                <motion.div
+                    className="absolute inset-0 z-50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <HelpScreen onClose={() => setShowHelp(false)} />
+                </motion.div>
+                )}
+            </AnimatePresence>
+            
+            {/* 감정 카드 오버레이 */}
+            <AnimatePresence>
+                {showEmotion && (
+                <motion.div
+                    className="absolute inset-0 z-50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <EmotionCard onClose={() => setShowEmotion(false)} />
+                </motion.div>
+                )}
+            </AnimatePresence>
+            
           )}
 
           <div ref={listEndRef} />
