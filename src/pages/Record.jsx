@@ -1,10 +1,9 @@
-// src/pages/Record.jsx
 import { useEffect, useRef, useState } from "react";
 import { FaBook } from "react-icons/fa";
 import { FiHelpCircle } from "react-icons/fi";
 import HelpScreen from "./HelpScreen";
 import EmotionCard from "./EmotionCard";
-import { motion, AnimatePresence } from "framer-motion";
+import SaveDialog from "../components/SaveModal";
 
 const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
   eager: true,
@@ -13,11 +12,26 @@ const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
 const defaultHero = new URL("../assets/images/cloud_calm.png", import.meta.url).href;
 
 function getEmotionImg(label) {
-  if(!label) return defaultHero;
+  if (!label) return defaultHero;
   const key = `../assets/images/cloud_${label}.png`;
-  // console.log("label : "+label);
   return emotionImgs[key] ?? defaultHero;
 }
+
+const debugForm = async (form) => {
+  const blob = form.get("record");  // Blob(application/json)
+  console.log("record blob:", blob);
+
+  if (blob) {
+    const txt = await blob.text();  // Blob → 문자열
+    console.log("record JSON =>", txt);
+
+    try {
+      console.log("record parsed =>", JSON.parse(txt));
+    } catch (e) {
+      console.warn("JSON parse fail:", e);
+    }
+  }
+};
 
 export default function Record() {
   const [sessionBubbles, setSessionBubbles] = useState([]); // ✅ 세션 버퍼
@@ -31,6 +45,8 @@ export default function Record() {
   const roleRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [emotion, setEmotion] = useState("calm");
+  const [showSave, setShowSave] = useState(false);
+  const [recordLists, setRecordLists] = useState([]);
 
   const [partialText, setPartialText] = useState("");
   const [chat, setChat] = useState([]); // 화면에는 항상 최신 1개만 보여줌
@@ -46,6 +62,19 @@ export default function Record() {
 
   const WS_URL =
     "ws://localhost:9000/ws/stt?encoding=OGG_OPUS&sample_rate=16000&use_itn=true&model_name=sommers_ko&domain=CALL";
+
+  useEffect(() => {
+    if (!showSave) return;
+    (async () => {
+      try {
+        const res = await fetch("http://localhost:9000/api/record-names"); // [{id,name}]
+        const data = await res.json();
+        setRecordLists(Array.isArray(data) ? data : []);
+      } catch {
+        setRecordLists([]);
+      }
+    })();
+  }, [showSave]);
 
   const scrollToBottom = () => listEndRef.current?.scrollIntoView({ behavior: "smooth" });
   const HERO_IMG_CLASS = "w-48 h-48";
@@ -102,7 +131,7 @@ export default function Record() {
     });
 
   const disconnectWS = () => {
-    if (wsRef.current) { try { wsRef.current.close(1000, "user-toggle"); } catch {} wsRef.current = null; }
+    if (wsRef.current) { try { wsRef.current.close(1000, "user-toggle"); } catch { } wsRef.current = null; }
     setConnected(false);
   };
 
@@ -149,8 +178,8 @@ export default function Record() {
 
   const stopRecording = () => {
     setIsRecording(false);
-    try { wsRef.current?.send("EOS"); } catch {}
-    try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch {}
+    try { wsRef.current?.send("EOS"); } catch { }
+    try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch { }
     mediaRecRef.current = null;
     if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
 
@@ -173,6 +202,7 @@ export default function Record() {
             endedAt,
             durationMs: Math.max(0, endedAt - (utterStartRef.current || endedAt)),
             audioBlob, // 🔴 파일
+            emotion: (emotion || "calm"),
           };
           setSessionBubbles((old) => [...old, bubbleForSession]);
 
@@ -212,44 +242,62 @@ export default function Record() {
   };
 
   // 실제 저장용 FormData 구성 (메타 + 파일들)
-  const buildFormData = () => {
+  const buildFormData = ({ recordListId, recordListTitle }) => {
     const meta = sessionBubbles.map((b, i) => ({
-      id: b.id,
-      speaker: b.speaker,
-      text: b.text,
-      startedAt: b.startedAt,
-      endedAt: b.endedAt,
-      durationMs: b.durationMs,
-      fileField: `audio_${i}`,
-    }));
+    // ✅ 백엔드가 요구하는 필드들
+    bTalker: b.speaker || "me",                // boolean 으로 변환
+   bText: b.text,
+   bEmotion: ((b.emotion || emotion || "calm")), // Enum 매핑 대비
+    bLength: null,                               // 길이는 서버에서 durationMs로 보정
+    durationMs: b.durationMs,
+
+    // (참고) 디버깅/추적용으로 기존 값들도 같이 보낼 수 있다면:
+    id: b.id,
+    startedAt: b.startedAt,
+    endedAt: b.endedAt,
+
+    // 버블 오디오 파일 필드명
+    fileField: `audio_${i}`,
+  }));
     const form = new FormData();
-    form.append(
-      "record",
-      new Blob([JSON.stringify({ title: null, context: null, bubbles: meta })], { type: "application/json" })
-    );
+    form.append("record", new Blob([JSON.stringify({
+   voiceField: null,                    // 세션 통짜 오디오 쓸 거면 필드명 넣기
+   record: {                            // ✅ 반드시 포함
+     rlId: recordListId ?? null,
+     rLength: null,
+     rVoice: null
+   },
+   bubbles: meta,                       // meta에 fileField: "audio_i", durationMs 포함
+   recordListTitle,                     // 새 리스트 생성 시 제목
+   userId: "current-user-id"            // (선택) 서버에서 SecurityContext 쓰면 생략 가능
+ })], { type: "application/json" }))
     sessionBubbles.forEach((b, i) => form.append(`audio_${i}`, b.audioBlob, `utt_${i}.ogg`));
+    
     return form;
   };
 
-  const saveSession = async () => {
+const saveSession = async ({ recordListId, recordListTitle }) => {
   if (sessionBubbles.length === 0) return;
-
-  const form = buildFormData(); // 이미 구현해두신 그 함수
-
   try {
-    const res = await fetch("http://localhost:9000/api/records", {
-      method: "POST",
-      body: form,              // ❗ headers에 Content-Type 절대 수동 설정 금지
+    const form = buildFormData({ recordListId, recordListTitle });
+
+    // ✅ 여기서 디버깅!
+    await debugForm(form);
+
+    const res = await fetch("http://localhost:9000/api/records/save", { 
+      method: "POST", 
+      body: form 
     });
     const data = await res.json();
     console.log("✅ 저장 완료:", data);
 
-    // 성공 후 초기화
-    setChat([]);
-    setHeroId(null);
-    setSessionBubbles([]);
-  } catch (e) {
-    console.error("❌ 저장 실패:", e);
+    setChat([]); 
+    setHeroId(null); 
+    setSessionBubbles([]); 
+    setEmotion("calm");
+    setShowSave(false);
+  } catch (e) { 
+    console.error("❌ 저장 실패:", e); 
   }
 };
 
@@ -260,7 +308,7 @@ export default function Record() {
   /** ---------- lifecycle ---------- */
   useEffect(() => {
     return () => {
-      try { mediaRecRef.current?.stop(); } catch {}
+      try { mediaRecRef.current?.stop(); } catch { }
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
       disconnectWS();
     };
@@ -269,11 +317,11 @@ export default function Record() {
 
   /** ---------- render ---------- */
   return (
-    <div className="h-full bg-text-200 flex flex-col">
+    <div className="h-full bg-text-200 flex flex-col relative">
       {/* 헤더 */}
-      <div className="flex justify-between items-center px-6 py-4">
-        <FaBook className="text-white h-5 w-5" 
-        onClick={() => setShowEmotion(true)}
+      <div className="flex justify-between items-center p-8">
+        <FaBook className="text-white h-5 w-5"
+          onClick={() => setShowEmotion(true)}
         />
         <div className="text-sm text-white/80">WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}</div>
         <FiHelpCircle className="text-white h-6 w-6" onClick={() => setShowHelp(true)} />
@@ -286,14 +334,16 @@ export default function Record() {
           ${isRecording && role === "partner" ? "border-cloud-parter" : "border-cloud-partner"}`}
         title={isRecording && role === "partner" ? "녹음 종료" : "상대방 녹음 시작"}
       >
-        <span className="text-base font-semibold">상대</span>
+        <span className="w-12 h-12">
+          <img src="src/assets/images/구르미.svg" />
+        </span>
       </div>
 
       {/* 중앙: 실시간/채팅 */}
       <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
           {!isRecording && chat.length === 0 && (
-            <div className="flex justify-center my-20">
+            <div className="flex justify-center md:my-20 my-[30px]">
               <img src={defaultHero} alt="calm" className={HERO_IMG_CLASS} />
             </div>
           )}
@@ -326,36 +376,7 @@ export default function Record() {
               </div>
             </div>
           )}
-             {/* 도움말 오버레이 (fade) */}
-            <AnimatePresence>
-                {showHelp && (
-                <motion.div
-                    className="absolute inset-0 z-50"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                >
-                    <HelpScreen onClose={() => setShowHelp(false)} />
-                </motion.div>
-                )}
-            </AnimatePresence>
-            
-            {/* 감정 카드 오버레이 */}
-            <AnimatePresence>
-                {showEmotion && (
-                <motion.div
-                    className="absolute inset-0 z-50"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                >
-                    <EmotionCard onClose={() => setShowEmotion(false)} />
-                </motion.div>
-                )}
-            </AnimatePresence>
-          
+
 
           <div ref={listEndRef} />
         </div>
@@ -364,23 +385,34 @@ export default function Record() {
       {/* 하단: 내 버튼 */}
       <button
         onClick={onMeClick}
-        className={`fixed left-1/2 -translate-x-1/2 bottom-[160px] w-20 h-20 rounded-full bg-white border-4 
-          shadow-xl flex items-center justify-center
-          ${isRecording && role === "me" ? "border-cloud-partner" : "border-cloud-mine"}`}
+        className={`absolute left-1/2 -translate-x-1/2
+      bottom-[calc(env(safe-area-inset-bottom)+96px)]
+      md:bottom-[calc(env(safe-area-inset-bottom)+187px)]
+      w-20 h-20 rounded-full bg-white border-4 shadow-xl flex items-center justify-center
+      ${isRecording && role === "me" ? "border-cloud-partner" : "border-cloud-mine"}`}
       >
-        <span className="text-base font-semibold">나</span>
+        <span className="w-12 h-12">
+          <img src="src/assets/images/구르미.svg" />
+        </span>
       </button>
 
       {/* ✅ 결과 화면에서 '취소/저장' 버튼 (녹음이 끝났고 말풍선이 떠 있을 때만) */}
       {!isRecording && chat.length === 1 && (
-        <div className="flex justify-around items-center p-3 mb-32 text-white text-lg font-semibold select-none">
+        <div className="flex justify-around items-center p-3 mb-44 text-white text-lg font-semibold select-none">
           <button onClick={cancelSession} className="opacity-90">취소</button>
-          
-          <button onClick={saveSession} className="opacity-90">저장</button>
+
+          <button onClick={() => setShowSave(true)} className="opacity-90">저장</button>
         </div>
       )}
 
       {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
+      {showEmotion && <EmotionCard onClose={() => setShowEmotion(false)} />}
+      <SaveDialog
+        open={showSave}
+        onClose={() => setShowSave(false)}
+        lists={recordLists}
+        onConfirm={(payload) => saveSession(payload)}
+      />
     </div>
   );
 }

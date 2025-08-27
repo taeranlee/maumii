@@ -30,7 +30,7 @@ function CurvedArrowLeft({ className = "" }) {
 
 export default function HelpScreen({ onClose }) {
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 z-[100]">
       {/* 반투명 배경 (클릭 시 닫힘) */}
       <motion.div
         className="absolute inset-0 bg-black/70"
@@ -67,33 +67,33 @@ export default function HelpScreen({ onClose }) {
         <VerticalArrow dir="up" className="absolute left-1/2 -translate-x-1/2 top-[26%] h-16 w-6 text-notice" />
 
         {/* 2) 가운데 안내문 (큰 캐릭터 위에 걸치도록 중앙 배치) */}
-        <div className="absolute left-1/2 top-[45%] md:top-[43%] -translate-x-1/2 -translate-y-1/2 text-center font-semibold text-[18px]">
+        <div className="absolute left-1/2 top-[45%] md:top-[47%] -translate-x-1/2 -translate-y-1/2 text-center font-semibold text-[18px]">
           꾹~ 눌러서 녹음해주세요!<br />
           구르미가 감정을 표현해드립니다
         </div>
 
         {/* 2-1) 중앙에서 마이크(아래 작은 원)로 내려가는 '아래' 세로 화살표 */}
-        <VerticalArrow dir="down" className="absolute left-1/2 -translate-x-1/2 top-[55%] md:top-[50%] h-16 w-6 text-notice" />
+        <VerticalArrow dir="down" className="absolute left-1/2 -translate-x-1/2 top-[55%] md:top-[55%] h-16 w-6 text-notice" />
         {/* main 여기서 여러가지 비동기 동작 */}
             <div className="h-[40%] grid place-items-center">
                 <div className="flex flex-col items-center">
                 </div>
             </div>
 
-        {/* 내 버튼*/}
-        <div className="cursor-pointer m-auto w-20 h-20 rounded-full bg-white border-4 border-cloud-mine flex items-center justify-center">
-            <span className="w-12 h-12">
-                <img src="src/assets/images/구르미.svg"></img>
-            </span>
+        {/* 내 버튼 */}
+        <div className="cursor-pointer m-auto mt-8 w-20 h-20 rounded-full bg-white border-4 border-cloud-mine flex items-center justify-center">
+          <span className="w-12 h-12">
+            <img src="src/assets/images/구르미.svg" />
+          </span>
         </div>
         {/* 3) 하단 안내문 (탭바 “기록” 방향) */}
-        <div className="absolute left-16 bottom-[120px] md:bottom-36 font-semibold text-[16px]">
+        <div className="absolute left-16 bottom-[120px] md:bottom-38 font-semibold text-[16px]">
           녹음한 대화 기록을 확인할 수 있어요
         </div>
 
         {/* 3-1) 좌하단 곡선 화살표: 좌하단에서 위/오른쪽을 향하도록 회전 */}
         {/* 3-1) 좌하단 곡선 화살표: 좌하단에서 위/왼쪽을 향하도록 */}
-        <CurvedArrowLeft className="absolute left-10 bottom-[70px] md:bottom-24 w-28 h-11 text-notice rotate-[260deg]" />   
+        <CurvedArrowLeft className="absolute left-10 bottom-[70px] md:bottom-23 w-28 h-11 text-notice rotate-[260deg]" />   
         <div className="absolute left-[74px] bottom-11 text-white">
             <FaBoxArchive className="w-[20px] h-[20px]" />
         </div>
