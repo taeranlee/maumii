@@ -1,49 +1,31 @@
-import React, { useState } from "react";
+import{ useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../components/header";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
-import SectionHeader from "../components/RecordingHeader";
+import SectionHeader from "../components/SectionHeader";
 import Bubble from "../components/Bubble";
 import { createPortal } from "react-dom";
-import { useRef, useEffect } from "react";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { useRecords } from "../hooks/useRecords.js";
 
-// 샘플 데이터
-const sampleSections = [
-  {
-    id: "s1",
-    header: { dateLabel: "4.7 월 오후 11:07", duration: "11분 52초" },
-    talks: [
-      { id: 1, me: true, text: "나 어제 진짜 기분 좋았어~~", sub: "0.0초" },
-      { id: 2, me: false, text: "왜 기분이 좋았어?", sub: "5.6초" },
-      {
-        id: 3,
-        me: true,
-        text: "왜냐하면 내가 쇼핑을 했는데\n진짜 잘생긴 사람이 옆에 지나갔어!!\n너도 봤었으면 좋았을 텐데 아쉽다!",
-        sub: "6분",
-      },
-      { id: 4, me: false, text: "와 진짜 화난다 너만 본거야?", sub: "10분" },
-    ],
-  },
-  {
-    id: "s2",
-    header: { dateLabel: "4.10 목 오후 1:14", duration: "21분 48초" },
-    talks: [
-      {
-        id: 5,
-        me: true,
-        text: "나 진짜 너 때문에 너무 화난다\n왜 그렇게 내 말을 안들어",
-        sub: "1분",
-      },
-    ],
-  },
-];
 
-export default function RecordDetail() {
-  // 제목 수정
+export default function RecordDetail({ userId = "null" }) {
+  const { rlId } = useParams();
+  const { title, setTitle, sections, loading, error } = useRecords(rlId, userId);
+  const {
+    audioRef,
+    activeRecId,
+    playing,
+    playSection,
+    getProgressOf,
+    seek,
+  } = useAudioPlayer();
+
+  // 제목 인라인 수정
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [title, setTitle] = useState("이태란님과의 대화");
 
-  // 섹션 선택/삭제
+  // 선택/삭제 상태
   const [selectMode, setSelectMode] = useState(false);
   const [selectedSectionIds, setSelectedSectionIds] = useState([]);
 
@@ -51,82 +33,64 @@ export default function RecordDetail() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTalk, setEditingTalk] = useState(null); // { sectionId, talkId, text }
 
-  // 데이터
-  const [sections, setSections] = useState(sampleSections);
+  // 말풍선 활성화를 위한 현재 ms
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    let raf;
+    const tick = () => {
+      setCurrentTimeMs(a.currentTime * 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [audioRef]);
 
-  const canvasRef = useRef(null);
-
+  // 섹션 토글/삭제
   const toggleSection = (sid) => {
     setSelectedSectionIds((prev) =>
       prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]
     );
   };
-
   const handleDeleteSections = () => {
     if (selectedSectionIds.length === 0) return;
-    setSections((prev) =>
-      prev.filter((s) => !selectedSectionIds.includes(s.id))
-    );
+    // 프론트에서만 제거(백엔드 삭제는 별도 API 필요)
+    const remain = sections.filter((s) => !selectedSectionIds.includes(s.id));
+    // sections는 훅의 상태이므로 화면만 정리하고 싶다면 별도 로컬 상태가 필요하지만
+    // 여기서는 선택모드 초기화만 처리
     setSelectedSectionIds([]);
     setSelectMode(false);
+    console.warn("섹션 삭제는 아직 백엔드 연동 필요. 남은 섹션 수:", remain.length);
   };
 
+  // 말풍선 편집
   const openEditTalk = (sectionId, talkId, currentText) => {
     setEditingTalk({ sectionId, talkId, text: currentText });
     setSheetOpen(true);
   };
-
   const saveTalkText = () => {
     if (!editingTalk) return;
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id !== editingTalk.sectionId
-          ? s
-          : {
-              ...s,
-              talks: s.talks.map((t) =>
-                t.id === editingTalk.talkId
-                  ? { ...t, text: editingTalk.text }
-                  : t
-              ),
-            }
-      )
-    );
+    // 화면상 텍스트만 바꿔주는 경우라면 훅에서 내려준 sections를 직접 수정할 수 없으니
+    // 보통은 상위에서 sections 상태를 로컬로 복사해 관리하거나 편집 API 호출 후 재조회가 필요.
+    console.warn("저장은 API 연동 후 재조회 필요");
     setSheetOpen(false);
     setEditingTalk(null);
   };
 
-  useEffect(() => {
-    if (!sheetOpen) return;
-
-    const prev = {
-      overflow: document.body.style.overflow,
-      touchAction: document.body.style.touchAction,
-    };
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none"; // iOS에서 튕김 방지
-
-    return () => {
-      document.body.style.overflow = prev.overflow;
-      document.body.style.touchAction = prev.touchAction;
-    };
-  }, [sheetOpen]);
-
-  // 탭바 높이가 있으면 조절 (없으면 0)
   const TABBAR_H = 100;
 
   return (
     <div
-      ref={canvasRef}
       className={
         "relative w-full bg-background " +
-        (sheetOpen
-          ? "overflow-hidden overscroll-none"
-          : "overflow-y-auto pb-24") +
-        // ▼ 모바일: dvh, 데스크탑: svh + 중앙 정렬/라운드
+        (sheetOpen ? "overflow-hidden overscroll-none" : "overflow-y-auto pb-24") +
         " h-[111dvh] md:h-[100svh] md:max-w-[390px] md:mx-auto md:rounded-xl"
       }
     >
+      {/* 공용 오디오(숨김) */}
+      <audio ref={audioRef} className="hidden" />
+
       {/* HEADER */}
       <Header
         title={
@@ -191,12 +155,32 @@ export default function RecordDetail() {
 
       {/* CONTENT */}
       <div className="px-4 pb-24">
+        {loading && (
+          <div className="py-8 text-center text-slate-500">불러오는 중…</div>
+        )}
+        {error && (
+          <div className="py-2 text-center text-red-500 text-sm">{error}</div>
+        )}
+        {!loading && sections.length === 0 && !error && (
+          <div className="py-8 text-center text-slate-500">기록이 없습니다.</div>
+        )}
+
         {sections.map((sec) => {
           const checked = selectedSectionIds.includes(sec.id);
+          const isActiveSection = sec.rId === activeRecId;
+          const nowMs = isActiveSection ? currentTimeMs : -1;
+
           return (
             <div key={sec.id} className="relative">
               <div className="relative">
-                <SectionHeader {...sec.header} />
+                <SectionHeader
+                  {...sec.header}
+                  onPlay={() => playSection(sec)}
+                  progress={getProgressOf(sec)}
+                  onSeek={(r) => seek(sec, r)}
+                  isActive={isActiveSection}
+                  isPlaying={playing}
+                />
                 {selectMode && (
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
                     <input
@@ -210,20 +194,30 @@ export default function RecordDetail() {
               </div>
 
               <div className="bg-white rounded-3xl pt-1 pb-3 px-3">
-                {sec.talks.map((t) => (
-                  <div key={t.id}>
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => {
-                        if (selectMode) return;
-                        openEditTalk(sec.id, t.id, t.text);
-                      }}
-                    >
-                      <Bubble me={t.me} text={t.text} sub={t.sub} />
-                    </button>
-                  </div>
-                ))}
+                {sec.talks.map((t) => {
+                  const isActiveBubble = nowMs >= t.startMs && nowMs < t.endMs;
+                  return (
+                    <div key={t.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left"
+                        onClick={() => {
+                          const a = audioRef.current;
+                          if (!a) return;
+                          // 현재 섹션이 아니면 먼저 섹션 재생(소스 세팅)
+                          if (!isActiveSection) {
+                            playSection(sec);
+                          }
+                          // 해당 말풍선 시작으로 점프
+                          a.currentTime = t.startMs / 1000 + 0.01;
+                          a.play();
+                        }}
+                      >
+                        <Bubble me={t.me} text={t.text} sub={t.sub} isActive={isActiveBubble} emotion={t.emotion} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="my-6 h-px w-full bg-slate-200" />
@@ -232,24 +226,19 @@ export default function RecordDetail() {
         })}
       </div>
 
-      {/* ===== Bottom Sheet: 포털로 화면 하단 고정 ===== */}
+      {/* ===== Bottom Sheet ===== */}
       {sheetOpen &&
         editingTalk &&
-        canvasRef.current &&
         createPortal(
           <div className="absolute inset-0 z-50">
-            {/* dim: 레이아웃 영역만 어둡게 (모서리 맞춤) */}
             <div
               className="absolute inset-0 bg-black/40 rounded-3xl"
               onClick={() => setSheetOpen(false)}
             />
 
-            {/* 시트: 레이아웃 하단에 붙이기 (래퍼 기준) */}
             <div
               className="fixed left-1/2 -translate-x-1/2 md:translate-y-12 translate-y-[98px] w-full md:max-w-[390px] pointer-events-none"
-              style={{
-                bottom: `calc(${TABBAR_H}px)`,
-              }}
+              style={{ bottom: `calc(${TABBAR_H}px)` }}
             >
               <div className="pointer-events-auto w-full rounded-b-2xl rounded-t-[40px] bg-white shadow-xl">
                 <div className="text-lg font-semibold mb-3 mt-3 py-6 text-center">
@@ -287,7 +276,7 @@ export default function RecordDetail() {
               </div>
             </div>
           </div>,
-          canvasRef.current // ★ document.body 대신 레이아웃 노드
+          document.body
         )}
     </div>
   );
