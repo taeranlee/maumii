@@ -1,11 +1,10 @@
 import axios from "axios";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CiSearch } from "react-icons/ci";
 import { FaRegTrashAlt } from "react-icons/fa";
 import CalendarBottomSheet from "../components/CalendarBottomSheet";
 import Header from "../components/header";
-import { i } from "framer-motion/client";
 
 // utils/dateFormat.js
 export function formatKoreanDateTime(dateString) {
@@ -81,23 +80,6 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
     return `${y}-${m}-${day}`;
   }
 
-  const isSameYMD = (a, b) => {
-    if (!a || !b) return false;
-    return (
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
-  };
-
-  // 표시용 리스트: 날짜 탭에서 날짜가 선택되어 있으면 그 날만, 아니면 전체
-  const displayed = useMemo(() => {
-    if (tab === "date" && selectedDate) {
-      return recordList.filter((r) => isSameYMD(new Date(r.ts), selectedDate));
-    }
-    return recordList;
-  }, [recordList, tab, selectedDate]);
-
   return (
     <div className="mx-auto w-full min-h-[100svh] md:min-h-[100%] bg-background">
       {/* 헤더 */}
@@ -108,7 +90,10 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
         <div className="mb-4 flex items-center justify-between">
           <div className="flex gap-2">
             <button
-              onClick={() => setTab("recent")}
+              onClick={() => {
+                setTab("recent");
+                setRecordList(allRecords);
+              }}
               className={`h-10 w-16 rounded-full px-4 text-sm font-medium transition ${
                 tab === "recent"
                   ? "bg-button-nav text-white shadow"
@@ -178,7 +163,7 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
               <div className="flex w-full items-center gap-3 text-left">
                 <div
                   className="flex-1 cursor-pointer"
-                  onClick={() => navigate(`/record-detail/${rec.rlId}`)}
+                  onClick={() => navigate(`/record-list/${rec.rlId}`)}
                 >
                   <div className="mb-1 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-900">
@@ -189,7 +174,7 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
                     </span>
                   </div>
                   <p className="line-clamp-1 text-sm text-slate-500">
-                    {rec.rlName} 최근 대화 텍스트 들어가야 함
+                    {rec.rlText}
                   </p>
                 </div>
 
@@ -240,6 +225,10 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
         selected={selectedDate}
         setSelected={(d) => {
           setSelectedDate(d);
+          const filtered = allRecords.filter((rec) => 
+            toYMD(new Date(rec.updateDate)) === toYMD(d)
+          );
+          setRecordList(filtered);
           setShowCal(false);
         }}
       />
