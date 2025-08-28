@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import Title from "../components/Title";
@@ -10,9 +10,11 @@ export default function Login() {
   const [uId, setUId] = useState("");
   const [uPwd, setUPwd] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // 이미 로그인 상태라면 홈으로 보냄
-  if (isAuth) return <Navigate to="/record" replace />;
+  // 이미 로그인 상태라면 원래 가려던 곳 또는 기본 페이지로 보냄
+  const fromPath = location.state?.from?.pathname || "/record-list";
+  if (isAuth) return <Navigate to={fromPath} replace />;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ export default function Login() {
     }
     try {
       await login(uId, uPwd);   // Context의 login 함수 호출 → 세션 저장
-      navigate("/");            // 로그인 성공 후 홈으로 이동
+      navigate(fromPath, { replace: true });
     } catch {
       alert("로그인 실패");
     }
