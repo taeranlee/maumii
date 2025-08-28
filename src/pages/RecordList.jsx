@@ -1,44 +1,78 @@
-import { useState, useMemo } from "react";
+import axios from "axios";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CiSearch } from "react-icons/ci";
 import { FaRegTrashAlt } from "react-icons/fa";
-import Title from "../components/Title";
-import Collapse from "../components/Collapse";
 import CalendarBottomSheet from "../components/CalendarBottomSheet";
 import Header from "../components/header";
+import { i } from "framer-motion/client";
 
-export default function RecordList() {
+// utils/dateFormat.js
+export function formatKoreanDateTime(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  return date.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true, // 24시간제 대신 오전/오후
+  });
+}
+
+export default function RecordList({uId="kosa"}) { // react state 에서 uId 값 가져오기
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  // 녹음 리스트 (API 연동)
+  const [recordList, setRecordList] = useState([]); // 화면에 보여줄 리스트
+  const [allRecords, setAllRecords] = useState([]); // 전체 녹음 리스트 저장
   // --- 탭 & 달력
   const [tab, setTab] = useState("recent"); // "recent" | "date"
   const [showCal, setShowCal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null); // Date 객체 (자정 기준)
+  // 리스트 검색
+  const [open, setOpen] = useState(false);
+  const [keyword, setKeyword] = useState("");  // input 값
+  // 리스트 수정
+  const [editingId, setEditingId] = useState(null);
 
-  const [records] = useState([
-    {
-      id: 1,
-      title: "새로운 녹음",
-      desc: "아르바이트 교육 관련 전달사항을 요약...",
-      dateLabel: "4.10 목 오후 1:14",
-      ts: "2025-04-10T13:14:00",
-    },
-    {
-      id: 2,
-      title: "이태란님과의 대화",
-      desc: "우리 내일 어디서 만날지 정해야 할 것...",
-      dateLabel: "4.9 수 오후 3:27",
-      ts: "2025-04-09T15:27:00",
-    },
-    {
-      id: 3,
-      title: "장연정님과의 대화",
-      desc: "교육 내용 중에 어려운 게 있는지 확인하...",
-      dateLabel: "4.8 화 오후 2:26",
-      ts: "2025-04-08T14:26:00",
-    },
-  ]);
+  useEffect(() => {
+    // 백엔드 API 호출
+    axios.get(`http://localhost:9000/api/records/${uId}/record-list`)
+      .then(res => {
+        setRecordList(res.data); // 화면용
+        setAllRecords(res.data); // 저장용
+      })
+      .catch(err => console.error(err));
+  }, [uId]);
+
+  const handleSearch = () => {
+    if (!keyword) {
+      setRecordList(allRecords);
+      return;
+    }
+    // 백엔드 컨트롤러 호출 ... 단어 검색
+    axios.get(`http://localhost:9000/api/records/${uId}/record-list/${encodeURIComponent(keyword)}`)
+      .then(res => {
+        if(res.data.length === 0){
+          setRecordList(allRecords);
+        } else {
+          setRecordList(res.data);
+        }
+      })
+      .catch(err => console.error(err));
+    }
+
+    const handleIconClick = () => {
+      if(!open) {
+        setOpen(true);
+      } else{
+        handleSearch();
+    }
+  };
+
   /* ---------- utils ---------- */
   function toYMD(d) {
     const y = d.getFullYear();
@@ -59,10 +93,10 @@ export default function RecordList() {
   // 표시용 리스트: 날짜 탭에서 날짜가 선택되어 있으면 그 날만, 아니면 전체
   const displayed = useMemo(() => {
     if (tab === "date" && selectedDate) {
-      return records.filter((r) => isSameYMD(new Date(r.ts), selectedDate));
+      return recordList.filter((r) => isSameYMD(new Date(r.ts), selectedDate));
     }
-    return records;
-  }, [records, tab, selectedDate]);
+    return recordList;
+  }, [recordList, tab, selectedDate]);
 
   return (
     <div className="mx-auto w-full min-h-[100svh] md:min-h-[100%] bg-background">
@@ -75,7 +109,7 @@ export default function RecordList() {
           <div className="flex gap-2">
             <button
               onClick={() => setTab("recent")}
-              className={`h-8 rounded-full px-4 text-sm font-medium transition ${
+              className={`h-10 w-16 rounded-full px-4 text-sm font-medium transition ${
                 tab === "recent"
                   ? "bg-button-nav text-white shadow"
                   : "bg-white text-slate-600 border border-slate-200"
@@ -88,7 +122,7 @@ export default function RecordList() {
                 setTab("date");
                 setShowCal(true);
               }}
-              className={`h-8 rounded-full px-4 text-sm font-medium transition ${
+              className={`h-10 w-16 rounded-full px-4 text-sm font-medium transition ${
                 tab === "date"
                   ? "bg-button-nav text-white shadow"
                   : "bg-white text-slate-600 border border-slate-200"
@@ -97,66 +131,65 @@ export default function RecordList() {
               날짜
             </button>
           </div>
-
+          
+          {/* 검색창 */}
           <div className="relative flex items-center">
-            {/* 동그란 검색 버튼 (닫힌 상태) */}
-            {!open && (
-              <button
-                onClick={() => setOpen(true)}
-                className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white shadow-[0_0_8px_rgba(166,144,255,0.7)] hover:shadow-md transition"
-                aria-label="검색"
-              >
-                <CiSearch className="w-5 h-5 text-slate-800" />
-              </button>
-            )}
-
-            {/* 입력창 (열린 상태) — 가로로 '스윽' */}
-            <Collapse show={open} axis="x" duration={400}>
-              <div className="m-2 flex items-center w-30 h-9 rounded-full border border-purple-300 bg-white shadow-[0_0_8px_rgba(166,144,255,0.7)]">
-                <input
-                  type="text"
-                  placeholder="검색어 입력"
-                  className="flex-1 ml-3 text-sm outline-none"
-                  autoFocus
-                  onBlur={() => setOpen(false)} // 포커스 빠지면 닫힘
-                />
-                <CiSearch className="w-5 h-5 text-slate-800 mr-2" />
-              </div>
-            </Collapse>
+            <div
+              className={`flex items-center h-10 border border-purple-300 bg-white shadow-[0_0_8px_rgba(166,144,255,0.7)]
+              transition-all duration-500 ease-in-out overflow-hidden
+              ${open ? "w-44 pl-3 pr-2 rounded-full" : "w-10 justify-center rounded-full"}`}
+            >
+              <input
+                type="text"
+                placeholder="검색어 입력"
+                className={`text-sm outline-none transition-opacity duration-300
+                ${open ? "opacity-100 w-full" : "opacity-0 w-0"}`}
+                onChange={e => setKeyword(e.target.value)}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setOpen(false)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") handleSearch(); // 엔터로도 검색 가능
+                }}
+              />
+              <CiSearch
+                className="w-5 h-5 text-slate-800 cursor-pointer"
+                onClick={() => handleIconClick()}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* 리스트 */}
       <ul className="space-y-4 pl-2 pr-2 pb-28">
-        {displayed.length === 0 && (
+        {recordList.length === 0 && (
           <li className="px-6 py-10 text-center text-slate-400">
             선택한 날짜에 녹음이 없습니다.
           </li>
         )}
 
-        {displayed.map((rec) => {
-          const isEditing = editingId === rec.id;
+        {recordList.map((rec) => {
+          const isEditing = editingId === rec.rlId;
           return (
             <li
-              key={rec.id}
+              key={rec.rlId}
               className="rounded-[50px] bg-white p-4 pl-8 pr-5 shadow-[0_0px_5px_rgba(166,144,255,0.5)]"
             >
               <div className="flex w-full items-center gap-3 text-left">
                 <div
                   className="flex-1 cursor-pointer"
-                  onClick={() => navigate(`/record-list/${rec.id}`)}
+                  onClick={() => navigate(`/record-detail/${rec.rlId}`)}
                 >
                   <div className="mb-1 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-900">
-                      {rec.title}
+                      {rec.rlName}
                     </h3>
                     <span className="text-xs text-slate-500">
-                      {rec.dateLabel}
+                      {formatKoreanDateTime(rec.updateDate)}
                     </span>
                   </div>
                   <p className="line-clamp-1 text-sm text-slate-500">
-                    {rec.desc}
+                    {rec.rlName} 최근 대화 텍스트 들어가야 함
                   </p>
                 </div>
 
@@ -169,7 +202,7 @@ export default function RecordList() {
                     }`}
                   >
                     <button
-                      onClick={() => setEditingId(rec.id)}
+                      onClick={() => setEditingId(rec.rlId)}
                       className="grid h-10 w-10 place-items-center rounded-full bg-button-edit shadow-inner"
                       title="이름 변경"
                     >
