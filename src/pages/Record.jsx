@@ -58,7 +58,7 @@ export default function Record() {
     if (!showSave) return;
     (async () => {
       try {
-        const data = await RecordsAPI.getRecordNames();
+        const data = await RecordsAPI.getRecordNames("kosa");
         setRecordLists(Array.isArray(data) ? data : []);
       } catch {
         setRecordLists([]);

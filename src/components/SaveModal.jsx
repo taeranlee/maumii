@@ -11,6 +11,11 @@ export default function SaveModal({ open, onClose, lists, onConfirm }) {
     if (!open) { setMode("select"); setSelectedId(null); setNewName(""); }
   }, [open]);
 
+  useEffect(() => {
+    if (mode === "select" && !selectedId && Array.isArray(lists) && lists.length > 0) {
+      setSelectedId(String(lists[0].rlId));
+    }
+  }, [lists, mode, selectedId]);
   if (!open) return null;
 
   return (
@@ -53,9 +58,9 @@ export default function SaveModal({ open, onClose, lists, onConfirm }) {
   >
     <option value="">새 기록함 만들기…</option>
     {lists.map((it) => (
-      <option key={it.id} value={it.id}>
-        {it.name}
-      </option>
+      <option key={it.rlId} value={it.rlId}>
+   {it.rlName}
+ </option>
     ))}
   </select>
 

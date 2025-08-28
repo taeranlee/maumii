@@ -3,8 +3,8 @@ import api from "./api";
 
 export const RecordsAPI = {
   /** 레코드 리스트 이름들 가져오기: [{id, name}] */
-  async getRecordNames() {
-    const { data } = await api.get("/api/record-names");
+  async getRecordNames(uId) {
+    const { data } = await api.get(`/api/records/${uId}/record-name`);
     return Array.isArray(data) ? data : [];
   },
 
