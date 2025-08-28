@@ -1,7 +1,16 @@
+// components/RecordingHeader.jsx
 import React from "react";
-import PlayButton from "../components/PlayButton"; 
+import PlayButton from "../components/PlayButton";
 
-function SectionHeader({ dateLabel, duration, onPlay = () => {} }) {
+function SectionHeader({
+  dateLabel,
+  duration,           // "15초" 같은 라벨
+  progress = 0,       // 0 ~ 1
+  onPlay = () => {},
+  onSeek = null,      // (ratio: 0~1) => void
+}) {
+  const pct = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
+
   return (
     <div className="mt-6 mb-3">
       <div className="flex items-center gap-3 px-1">
@@ -16,15 +25,19 @@ function SectionHeader({ dateLabel, duration, onPlay = () => {} }) {
         <input
           type="range"
           min="0"
-          max="100"
+          max="1000"
+          value={Math.round(pct * 1000)}
+          onChange={(e) => {
+            if (!onSeek) return;
+            const v = Number(e.target.value) / 1000;
+            onSeek(v);
+          }}
           className="w-[280px] accent-button-record"
-          readOnly
         />
         <div className="text-slate-500 text-xs">{duration}</div>
       </div>
     </div>
   );
 }
-
 
 export default SectionHeader;

@@ -268,7 +268,7 @@ export default function Record() {
      rVoice: null
    },
    bubbles: meta,                       // meta에 fileField: "audio_i", durationMs 포함
-   recordListTitle,                     // 새 리스트 생성 시 제목
+  recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
    userId: "current-user-id"            // (선택) 서버에서 SecurityContext 쓰면 생략 가능
  })], { type: "application/json" }))
     sessionBubbles.forEach((b, i) => form.append(`audio_${i}`, b.audioBlob, `utt_${i}.ogg`));
