@@ -1,5 +1,5 @@
 // 녹음/리스트 관련 API만 모아둔 모듈
-import { api } from "./api";
+import api from "./api";
 
 export const RecordsAPI = {
   /** 레코드 리스트 이름들 가져오기: [{id, name}] */
