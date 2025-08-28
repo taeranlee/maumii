@@ -1,76 +1,31 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import{ useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../components/header";
 import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
-import SectionHeader from "../components/RecordingHeader";
+import SectionHeader from "../components/SectionHeader";
 import Bubble from "../components/Bubble";
 import { createPortal } from "react-dom";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { useRecords } from "../hooks/useRecords.js";
 
-/** ▼ 헬퍼들 */
-// ✅ LDT(타임존 없음)도, ISO(타임존 포함)도 안전하게 파싱
-const parseLocalDateTime = (s) => {
-  if (!s) return null;
-  if (s instanceof Date) return isNaN(s) ? null : s;
 
-  // 1) "yyyy-MM-ddTHH:mm:ss[.SSS]"  (타임존 없음)
-  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(s);
-  if (m) {
-    const [, Y, M, D, h, mi, se = "0", ms = "0"] = m;
-    return new Date(+Y, +M - 1, +D, +h, +mi, +se, +`${ms}`.padEnd(3, "0"));
-  }
+export default function RecordDetail({ userId = "null" }) {
+  const { rlId } = useParams();
+  const { title, setTitle, sections, loading, error } = useRecords(rlId, userId);
+  const {
+    audioRef,
+    activeRecId,
+    playing,
+    playSection,
+    getProgressOf,
+    seek,
+  } = useAudioPlayer();
 
-  // 2) 그 외 문자열은 브라우저 파서에 맡김 (ISO with Z/+09:00 등)
-  const d = new Date(s);
-  return isNaN(d) ? null : d;
-};
-
-const fmtStartLabel = (ms) => {
-  const sec = Math.floor(ms / 1000);
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  if (m >= 1) return `${m}분 ${s}초`;      // 1분 이상이면 "m분 s초"
-  return `${(ms / 1000).toFixed(1)}초`;    // 1분 미만이면 소수1자리 초
-};
-
-const fmtDateLabel = (s) => {
-  const d = parseLocalDateTime(s);
-  if (!d) return "-";
-
-  const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-  const h = d.getHours();
-  const ampm = h < 12 ? "오전" : "오후";
-  const hh = (h % 12) || 12;
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${d.getMonth() + 1}.${d.getDate()} ${dow} ${ampm} ${hh}:${mm}`;
-};
-
-// "HH:mm:ss" | "HH:mm:ss.SSS" | number(ms) | null 모두 OK
-const toMsFromLocalTime = (t) => {
-  if (!t && t !== 0) return 0;
-  if (typeof t === "number") return t;
-
-  const m = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/.exec(t);
-  if (!m) return 0;
-  const [, hh, mm, ss, ms = "0"] = m;
-  return ((+hh) * 3600 + (+mm) * 60 + (+ss)) * 1000 + +`${ms}`.padEnd(3, "0");
-};
-
-const fmtDurationKorean = (ms) => {
-  const sec = Math.floor((ms || 0) / 1000);
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  if (h) return `${h}시간 ${m}분 ${s}초`;
-  if (m) return `${m}분 ${s}초`;
-  return `${s}초`;
-};
-
-export default function RecordDetail({ rlId = 5, userId = "null" }) {
-  // 제목 수정
+  // 제목 인라인 수정
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [title, setTitle] = useState("대화 기록");
 
-  // 섹션 선택/삭제
+  // 선택/삭제 상태
   const [selectMode, setSelectMode] = useState(false);
   const [selectedSectionIds, setSelectedSectionIds] = useState([]);
 
@@ -78,96 +33,21 @@ export default function RecordDetail({ rlId = 5, userId = "null" }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTalk, setEditingTalk] = useState(null); // { sectionId, talkId, text }
 
-  // ✅ 서버에서 불러온 섹션들
-  const [sections, setSections] = useState([]); // [{id, header, talks, rVoice}]
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // 오디오 재생기 (공용 1개)
-  const audioRef = useRef(null);
-
-  /** ▼ 데이터 로딩 */
+  // 말풍선 활성화를 위한 현재 ms
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
   useEffect(() => {
-  (async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = `http://localhost:9000/api/record-lists/${rlId}/records?userId=${encodeURIComponent(userId)}`;
-      console.log("[RecordDetail] fetch:", url);
-      const res = await fetch(url);
+    const a = audioRef.current;
+    if (!a) return;
+    let raf;
+    const tick = () => {
+      setCurrentTimeMs(a.currentTime * 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [audioRef]);
 
-      // ❗ HTTP 에러를 즉시 드러내기
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
-      }
-
-      const data = await res.json();
-      console.log("[RecordDetail] response JSON:", data);
-
-      if (Array.isArray(data) && data.length > 0 && data[0].rlName) {
-        setTitle(data[0].rlName);
-      }
-
-      // 기대 스키마: [{ rId, rCreatedAt, rLength, rVoice, bubbles?: [...] }, ...]
-      const mapped = (Array.isArray(data) ? data : []).map((rec) => {
-        const totalMs =
-          typeof rec.rLength === "string"
-            ? toMsFromLocalTime(rec.rLength)
-            : (rec.totalMs ?? 0);
-
-        let cursorMs = 0;
-        const talks = (rec.bubbles || []).map((b, idx) => {
-          const lenMs =
-            b?.durationMs ??
-            (typeof b?.bLength === "string" ? toMsFromLocalTime(b.bLength) : 0);
-
-          const startLabel = fmtStartLabel(cursorMs);
-
-          const talk = {
-            id: idx + 1,
-            me: (b?.bTalker || "").toLowerCase() === "me",
-            text: b?.bText || "",
-            sub: startLabel,
-            startMs: cursorMs,
-            endMs: cursorMs + Math.max(0, lenMs),
-          };
-          cursorMs += Math.max(0, lenMs);
-          return talk;
-        });
-
-        // rVoice 경로 정규화: /voices/** 또는 /media/** 만 들어오도록 백엔드와 합의했죠?
-        const voice = rec.rVoice || "";
-        if (!voice.startsWith("/voices/") && !voice.startsWith("/media/")) {
-          console.warn("[RecordDetail] rVoice looks odd:", voice);
-        }
-
-        return {
-          id: `rec-${rec.rId}`,
-          rId: rec.rId,
-          rVoice: voice, // 예: "/voices/uuid.ogg" 또는 "/media/voices/uuid.ogg"
-          header: {
-            dateLabel: fmtDateLabel(rec.rCreatedAt),
-            duration: fmtDurationKorean(totalMs),
-          },
-          talks,
-        };
-      });
-
-      console.log("[RecordDetail] mapped sections:", mapped);
-      setSections(mapped);
-    } catch (e) {
-      console.error("[RecordDetail] load records failed:", e);
-      setError(String(e?.message || e));
-      setSections([]);
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [rlId, userId]);
-
-  /** ▼ 섹션 선택/삭제 */
+  // 섹션 토글/삭제
   const toggleSection = (sid) => {
     setSelectedSectionIds((prev) =>
       prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]
@@ -175,122 +55,29 @@ export default function RecordDetail({ rlId = 5, userId = "null" }) {
   };
   const handleDeleteSections = () => {
     if (selectedSectionIds.length === 0) return;
-    setSections((prev) => prev.filter((s) => !selectedSectionIds.includes(s.id)));
+    // 프론트에서만 제거(백엔드 삭제는 별도 API 필요)
+    const remain = sections.filter((s) => !selectedSectionIds.includes(s.id));
+    // sections는 훅의 상태이므로 화면만 정리하고 싶다면 별도 로컬 상태가 필요하지만
+    // 여기서는 선택모드 초기화만 처리
     setSelectedSectionIds([]);
     setSelectMode(false);
+    console.warn("섹션 삭제는 아직 백엔드 연동 필요. 남은 섹션 수:", remain.length);
   };
 
-  /** ▼ 말풍선 편집 */
+  // 말풍선 편집
   const openEditTalk = (sectionId, talkId, currentText) => {
     setEditingTalk({ sectionId, talkId, text: currentText });
     setSheetOpen(true);
   };
   const saveTalkText = () => {
     if (!editingTalk) return;
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id !== editingTalk.sectionId
-          ? s
-          : {
-              ...s,
-              talks: s.talks.map((t) =>
-                t.id === editingTalk.talkId ? { ...t, text: editingTalk.text } : t
-              ),
-            }
-      )
-    );
+    // 화면상 텍스트만 바꿔주는 경우라면 훅에서 내려준 sections를 직접 수정할 수 없으니
+    // 보통은 상위에서 sections 상태를 로컬로 복사해 관리하거나 편집 API 호출 후 재조회가 필요.
+    console.warn("저장은 API 연동 후 재조회 필요");
     setSheetOpen(false);
     setEditingTalk(null);
   };
 
-  /** ▼ 바텀시트 열릴 때 스크롤 잠금 */
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const prev = {
-      overflow: document.body.style.overflow,
-      touchAction: document.body.style.touchAction,
-    };
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    return () => {
-      document.body.style.overflow = prev.overflow;
-      document.body.style.touchAction = prev.touchAction;
-    };
-  }, [sheetOpen]);
-
-  const [activeRecId, setActiveRecId] = useState(null);
- const [progress, setProgress] = useState(0);       // 0~1
- const [durationSec, setDurationSec] = useState(0); // 숫자(초)
-
-useEffect(() => {
-  const a = audioRef.current;
-  if (!a) return;
-  const onPlay = () => setIsPlaying(true);
-  const onPause = () => setIsPlaying(false);
-  const onEnded = () => setIsPlaying(false);
-
-  a.addEventListener("play", onPlay);
-  a.addEventListener("pause", onPause);
-  a.addEventListener("ended", onEnded);
-
-  return () => {
-    a.removeEventListener("play", onPlay);
-    a.removeEventListener("pause", onPause);
-    a.removeEventListener("ended", onEnded);
-  };
-}, []);
-
- // raf 루프
- useEffect(() => {
-   const a = audioRef.current;
-   if (!a) return;
-   let raf;
-   const tick = () => {
-     if (a.duration > 0) {
-       setDurationSec(a.duration);
-       setProgress(a.currentTime / a.duration);
-     }
-     raf = requestAnimationFrame(tick);
-   };
-   raf = requestAnimationFrame(tick);
-   return () => cancelAnimationFrame(raf);
- }, []);
-
-  const absUrl = (u) => (u?.startsWith("/") ? `http://localhost:9000${u}` : u || "");
-
-  /** ▼ 재생 제어: 섹션 헤더의 Play 버튼에서 호출 */
-const playSection = (section) => {
-  const a = audioRef.current;
-  if (!a || !section?.rVoice) return;
-  const src = absUrl(section.rVoice);
-
-  // 같은 섹션이면 토글
-  if (section.rId === activeRecId && a.src === src) {
-    if (a.paused) {
-      a.play().then(() => setIsPlaying(true)).catch(()=>{});
-    } else {
-      a.pause();
-      setIsPlaying(false);
-    }
-    return;
-  }
-
-  // 다른 섹션으로 변경
-  a.src = src;
-  a.currentTime = 0;
-  setActiveRecId(section.rId);
-  a.play().then(() => setIsPlaying(true)).catch(()=>{});
-};
-const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
-
-// 사용자가 바를 드래그했을 때 점프
- const seekSection = (sec, ratio) => {
-   const a = audioRef.current;
-   if (!a || sec.rId !== activeRecId || !Number.isFinite(a.duration)) return;
-   a.currentTime = Math.max(0, Math.min(1, ratio)) * a.duration;
- };
-
-  /** ▼ 탭바 높이 */
   const TABBAR_H = 100;
 
   return (
@@ -371,24 +158,28 @@ const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
         {loading && (
           <div className="py-8 text-center text-slate-500">불러오는 중…</div>
         )}
-
-        {!loading && sections.length === 0 && (
+        {error && (
+          <div className="py-2 text-center text-red-500 text-sm">{error}</div>
+        )}
+        {!loading && sections.length === 0 && !error && (
           <div className="py-8 text-center text-slate-500">기록이 없습니다.</div>
         )}
 
         {sections.map((sec) => {
           const checked = selectedSectionIds.includes(sec.id);
+          const isActiveSection = sec.rId === activeRecId;
+          const nowMs = isActiveSection ? currentTimeMs : -1;
+
           return (
             <div key={sec.id} className="relative">
               <div className="relative">
-                {/* ✅ SectionHeader의 onPlay에 넘겨서 rVoice 재생 */}
                 <SectionHeader
                   {...sec.header}
                   onPlay={() => playSection(sec)}
-                  progress={getSectionProgress(sec)}
-                  onSeek={(r) => seekSection(sec, r)}
-                  isActive={sec.rId === activeRecId}   // ✅ 현재 재생중인 섹션인지
-                  isPlaying={isPlaying}                // ✅ 오디오가 재생중인지
+                  progress={getProgressOf(sec)}
+                  onSeek={(r) => seek(sec, r)}
+                  isActive={isActiveSection}
+                  isPlaying={playing}
                 />
                 {selectMode && (
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
@@ -403,30 +194,31 @@ const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
               </div>
 
               <div className="bg-white rounded-3xl pt-1 pb-3 px-3">
-              {sec.talks.map((t) => {
-                const a = audioRef.current;
-                const isActive =
-                  sec.rId === activeRecId &&
-                  a &&
-                  a.currentTime * 1000 >= t.startMs &&
-                  a.currentTime * 1000 < t.endMs;
-
-                return (
-                  <div key={t.id}>
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => {
-                        if (selectMode) return;
-                        openEditTalk(sec.id, t.id, t.text);
-                      }}
-                    >
-                      <Bubble me={t.me} text={t.text} sub={t.sub} isActive={isActive} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                {sec.talks.map((t) => {
+                  const isActiveBubble = nowMs >= t.startMs && nowMs < t.endMs;
+                  return (
+                    <div key={t.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left"
+                        onClick={() => {
+                          const a = audioRef.current;
+                          if (!a) return;
+                          // 현재 섹션이 아니면 먼저 섹션 재생(소스 세팅)
+                          if (!isActiveSection) {
+                            playSection(sec);
+                          }
+                          // 해당 말풍선 시작으로 점프
+                          a.currentTime = t.startMs / 1000 + 0.01;
+                          a.play();
+                        }}
+                      >
+                        <Bubble me={t.me} text={t.text} sub={t.sub} isActive={isActiveBubble} emotion={t.emotion} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
 
               <div className="my-6 h-px w-full bg-slate-200" />
             </div>
@@ -484,7 +276,6 @@ const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
               </div>
             </div>
           </div>,
-          // 포털은 바깥 문서가 아니라 현재 레이아웃에 붙여도 됨
           document.body
         )}
     </div>

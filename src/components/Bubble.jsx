@@ -1,8 +1,8 @@
 import { React } from "react";
+import { getEmotionImg, defaultHero } from "../utils/emotion";
 
-// 왼/오 말풍선 하나
-function Bubble({ me, text, sub, isActive }) {
-  const avatar = "/src/assets/images/구르미.svg"; // 곰도리 사용(구르미.svg)
+function Bubble({ me, text, sub, isActive, emotion }) {
+  const avatar = getEmotionImg(emotion) || defaultHero;
 
   return (
     <div className={`mt-4 flex items-right gap-3 ${me ? "justify-end" : ""}`}>
@@ -10,8 +10,9 @@ function Bubble({ me, text, sub, isActive }) {
       {!me && (
         <img
           src={avatar}
-          alt="avatar"
+          alt={emotion || "avatar"}
           className="h-14 w-14 shrink-0 items-center"
+          draggable={false}
         />
       )}
 
@@ -23,7 +24,7 @@ function Bubble({ me, text, sub, isActive }) {
             me
               ? "bg-cloud-mine text-slate-800 rounded-br-md"
               : "bg-cloud-partner text-slate-800 rounded-bl-md",
-              isActive ? "shadow-[0_0_8px_rgba(126,104,255,0.7)]" : ""
+            isActive ? "shadow-[0_0_8px_rgba(126,104,255,0.7)]" : ""
           ].join(" ")}
         >
           {text}
@@ -43,8 +44,9 @@ function Bubble({ me, text, sub, isActive }) {
       {me && (
         <img
           src={avatar}
-          alt="avatar"
+          alt={emotion || "avatar"}
           className="h-14 w-14 shrink-0 items-center"
+          draggable={false}
         />
       )}
     </div>

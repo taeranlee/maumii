@@ -30,7 +30,7 @@ export default function App() {
           <Route path="/mypage/theme" element={<MypageTheme />} />
           <Route path="/record" element={<Record />} />
           <Route path="/record-list" element={<RecordList />} />
-          <Route path="/record-list/:id" element={<RecordDetail />} />
+          <Route path="/record-list/:rlId" element={<RecordDetail />} />
           <Route path="/emotion" element={<Emotion />} />
         </Routes>
     </Layout>

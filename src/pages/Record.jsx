@@ -4,18 +4,9 @@ import { FiHelpCircle } from "react-icons/fi";
 import HelpScreen from "./HelpScreen";
 import EmotionCard from "./EmotionCard";
 import SaveDialog from "../components/SaveModal";
+import { RecordsAPI } from "../api/records.js";
+import { getEmotionImg, defaultHero } from "../utils/emotion";
 
-const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
-  eager: true,
-  import: "default",
-});
-const defaultHero = new URL("../assets/images/cloud_calm.png", import.meta.url).href;
-
-function getEmotionImg(label) {
-  if (!label) return defaultHero;
-  const key = `../assets/images/cloud_${label}.png`;
-  return emotionImgs[key] ?? defaultHero;
-}
 
 const debugForm = async (form) => {
   const blob = form.get("record");  // Blob(application/json)
@@ -67,8 +58,7 @@ export default function Record() {
     if (!showSave) return;
     (async () => {
       try {
-        const res = await fetch("http://localhost:9000/api/record-names"); // [{id,name}]
-        const data = await res.json();
+        const data = await RecordsAPI.getRecordNames();
         setRecordLists(Array.isArray(data) ? data : []);
       } catch {
         setRecordLists([]);
@@ -221,12 +211,7 @@ export default function Record() {
   const sendToServer = async (who, text) => {
     console.log("📤 서버 전송 시도:", { speaker: who, content: text });
     try {
-      const res = await fetch("http://localhost:9000/healthz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ speaker: who, content: text }),
-      });
-      const data = await res.json();
+      const data = await RecordsAPI.sendTextForEmotion({ speaker: who, content: text });
       console.log("✅ 서버 응답:", data);
       const label = data?.label;
       setEmotion(label);
@@ -284,11 +269,7 @@ const saveSession = async ({ recordListId, recordListTitle }) => {
     // ✅ 여기서 디버깅!
     await debugForm(form);
 
-    const res = await fetch("http://localhost:9000/api/records/save", { 
-      method: "POST", 
-      body: form 
-    });
-    const data = await res.json();
+    const data = await RecordsAPI.saveRecord(form);
     console.log("✅ 저장 완료:", data);
 
     setChat([]); 
@@ -398,7 +379,7 @@ const saveSession = async ({ recordListId, recordListTitle }) => {
 
       {/* ✅ 결과 화면에서 '취소/저장' 버튼 (녹음이 끝났고 말풍선이 떠 있을 때만) */}
       {!isRecording && chat.length === 1 && (
-        <div className="flex justify-around items-center p-3 mb-44 text-white text-lg font-semibold select-none">
+        <div className="flex justify-around items-center p-3 mb-48 text-white text-lg font-semibold select-none">
           <button onClick={cancelSession} className="opacity-90">취소</button>
 
           <button onClick={() => setShowSave(true)} className="opacity-90">저장</button>

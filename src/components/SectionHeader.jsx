@@ -15,7 +15,7 @@ function SectionHeader({
 
   return (
     <div className="mt-6 mb-3">
-      <div className="flex items-center gap-3 px-1">
+      <div className="flex items-center gap-3 px-3">
         <div className="text-slate-700 font-semibold">{dateLabel}</div>
 
         {/* ▶️/⏸ 토글 */}
@@ -26,12 +26,12 @@ function SectionHeader({
           {isActive && isPlaying ? (
             <FaPause className="w-4 h-4 block m-auto" />
           ) : (
-            <FaPlay className="w-4 h-4 block m-auto" />
+            <FaPlay className="w-4 h-4 block ml-1" />
           )}
         </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-3 px-1">
+      <div className="mt-3 flex items-center justify-center gap-3 px-1">
         <input
           type="range"
           min="0"
