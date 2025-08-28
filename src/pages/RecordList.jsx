@@ -5,6 +5,7 @@ import { CiSearch } from "react-icons/ci";
 import { FaRegTrashAlt } from "react-icons/fa";
 import CalendarBottomSheet from "../components/CalendarBottomSheet";
 import Header from "../components/header";
+import ConfirmModal from "../components/ConfirmModal";
 
 // utils/dateFormat.js
 export function formatKoreanDateTime(dateString) {
@@ -32,10 +33,13 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
   const [showCal, setShowCal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null); // Date 객체 (자정 기준)
   // 리스트 검색
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // 검색창 열고 닫기
   const [keyword, setKeyword] = useState("");  // input 값
   // 리스트 수정
   const [editingId, setEditingId] = useState(null);
+  // 리스트 삭제
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [targetRecordListId, setTargetRecordListId] = useState(null);
 
   useEffect(() => {
     // 백엔드 API 호출
@@ -71,6 +75,60 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
         handleSearch();
     }
   };
+
+  const handleUpdate = async (rlId, newName, rlText) => {
+    try {
+      const body = {
+        rlName: newName,
+        uId: uId, // props에서 바로 사용
+      };
+      const res = await axios.put(
+        `http://localhost:9000/api/records/record-list/${rlId}`,
+        body
+      );
+
+      const updated = res.data;
+      // recordList 업데이트
+      setRecordList((prev) =>
+        prev.map((r) =>
+          r.rlId === rlId
+            ? { ...updated, rlText: r.rlText } // rlText 유지
+            : r
+        )
+      );
+      // allRecords도 같이 업데이트
+      setAllRecords((prev) =>
+        prev.map((r) =>
+          r.rlId === rlId
+            ? { ...updated, rlText: r.rlText }
+            : r
+        )
+      );
+
+      setEditingId(null);
+    } catch (err) {
+      console.error("수정 실패:", err);
+    }
+    };
+
+    const handleDelete = async () => {
+      if(!targetRecordListId) return;
+      try {
+        await axios.delete(
+          `http://localhost:9000/api/records/record-list/${targetRecordListId}`
+        );
+        // recordList에서 삭제
+        setRecordList((prev) => prev.filter((r) => r.rlId !== targetRecordListId));
+        // allRecords에서도 삭제
+        setAllRecords((prev) => prev.filter((r) => r.rlId !== targetRecordListId));
+        setOpenDeleteModal(false); // 삭제 모달 닫기
+        setTargetRecordListId(null);
+      } catch (err) {
+        console.error("삭제 실패:", err);
+        alert("녹음 목록 삭제 중 오류가 발생했습니다.");
+      }
+    };
+  
 
   /* ---------- utils ---------- */
   function toYMD(d) {
@@ -158,7 +216,7 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
           return (
             <li
               key={rec.rlId}
-              className="rounded-[50px] bg-white p-4 pl-8 pr-5 shadow-[0_0px_5px_rgba(166,144,255,0.5)]"
+              className="rounded-[50px] bg-white h-20 p-4 pl-8 pr-5 shadow-[0_0px_5px_rgba(166,144,255,0.5)]"
             >
               <div className="flex w-full items-center gap-3 text-left">
                 <div
@@ -166,9 +224,43 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
                   onClick={() => navigate(`/record-list/${rec.rlId}`)}
                 >
                   <div className="mb-1 flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      {rec.rlName}
-                    </h3>
+                    {isEditing ? (
+                      <>
+                        <input
+                          type="text"
+                          value={rec.rlName || ""}
+                          onChange={(e) => {
+                            const newName = e.target.value;
+                            setRecordList((prev) =>
+                              prev.map((r) =>
+                                r.rlId === rec.rlId ? { ...r, rlName: newName } : r
+                              )
+                            );
+                          }}
+                          // onBlur={() => setEditingId(null)} // input 밖 클릭 시 편집 종료
+                          autoFocus
+                          className="w-24 text-base font-semibold text-slate-900 border-b border-slate-300 outline-none"
+                          onClick={(e) => e.stopPropagation()} // 여기서 부모 클릭 전파 막기
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdate(rec.rlId, rec.rlName);
+                          }}
+                          className="flex items-center text-sm text-slate-600"
+                        >
+                          <span className="px-2 py-1 rounded-md bg-button-edit text-white">
+                            수정
+                          </span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-base font-semibold text-slate-900 cursor-pointer" >
+                          {rec.rlName}
+                        </h3>
+                      </>
+                    )}
                     <span className="text-xs text-slate-500">
                       {formatKoreanDateTime(rec.updateDate)}
                     </span>
@@ -205,7 +297,7 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
                     }`}
                   >
                     <button
-                      onClick={() => setEditingId(null)}
+                      onClick={() => {setTargetRecordListId(rec.rlId); setOpenDeleteModal(true);}}
                       className="grid h-10 w-10 place-items-center rounded-full bg-rose-500 shadow-inner"
                       title="삭제"
                     >
@@ -232,6 +324,18 @@ export default function RecordList({uId="kosa"}) { // react state 에서 uId 값
           setShowCal(false);
         }}
       />
+
+      <ConfirmModal
+          isOpen={openDeleteModal}
+          title="정말 삭제하시겠습니까?"
+          description="상대와의 전체 녹음 기록이 사라집니다."
+          onConfirm={handleDelete}
+          onCancel={() => {
+              setOpenDeleteModal(false);
+              setTargetRecordListId(null);
+          }}
+      />
+
     </div>
   );
 }
