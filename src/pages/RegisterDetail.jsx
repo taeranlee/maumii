@@ -11,52 +11,76 @@ import LevelSelector from "../components/LevelSelector";
 // import bear from "../assets/bear.png";
 
 export default function RegisterDetail() {
-    const { state } = useLocation(); // 1단계 데이터
-    const navigate = useNavigate();
+  const { state } = useLocation(); // 1단계 데이터
+  const navigate = useNavigate();
 
-    const [theme, setTheme] = useState("cloud");
-    const [level, setLevel] = useState("all");
+  const [theme, setTheme] = useState("cloud");
+  const [level, setLevel] = useState("all");
 
-    useEffect(() => {
-        if (!state) navigate("/register", { replace: true }); // 가드
-    }, [state, navigate]);
+  useEffect(() => {
+    if (!state) navigate("/register", { replace: true }); // 가드
+  }, [state, navigate]);
 
-    const canSubmit = !!theme && !!level;
+  const canSubmit = !!theme && !!level;
 
-    const handleFinish = (e) => {
-        e.preventDefault();
-        if (!canSubmit) return;
+  const handleFinish = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
 
-        const finalPayload = {
-            ...state,       // name, userId, pw, phone ...
-            theme,
-            level,
-        };
-        console.log("FINAL SIGNUP:", finalPayload);
-        // TODO: 서버 전송 후 이동
-        // navigate("/welcome");
+    const finalPayload = {
+      uId: state.userId,
+      uName: state.name,
+      uPwd: state.pw,
+      uPhone: state.phone,
+      uTheme: theme,
+      uExposure: level === "all",
     };
 
-    if (!state) return null;
+    try {
+      console.log("signup payload:", finalPayload);
+      // axios 인스턴스(api) 없으면 fetch로 교체 ↓
+      // await api.post("http://localhost:9000/api/users/signup", finalPayload);
 
-    return (
-        <form onSubmit={handleFinish} className="flex-1 bg-white">
+      const res = await fetch("http://localhost:9000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalPayload),
+      });
 
-            <div className="m-16">
-                <Title variant="auth">회원가입</Title>
-            </div>
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("signup failed:", res.status, text);
+        alert("회원가입 실패: " + res.status);
+        return;
+      }
 
-            <div className="mx-auto w-full max-w-[330px] px-5 pb-16 space-y-6">
-                <ThemeSelector theme={theme} setTheme={setTheme} />
-                <LevelSelector level={level} setLevel={setLevel} />
+      alert("회원가입 성공!");
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      alert("회원가입 실패(네트워크)");
+    }
+  };
 
-                {/* 가입 버튼 */}
-                <div className="pt-1">
-                    <Button full type="submit" disabled={!canSubmit}>
-                        회원가입
-                    </Button>
-                </div>
-            </div>
-        </form>
-    );
+  if (!state) return null;
+
+  return (
+    <form onSubmit={handleFinish} className="flex-1 bg-white">
+      <div className="m-16">
+        <Title variant="auth">회원가입</Title>
+      </div>
+
+      <div className="mx-auto w-full max-w-[330px] px-5 pb-16 space-y-6">
+        <ThemeSelector theme={theme} setTheme={setTheme} />
+        <LevelSelector level={level} setLevel={setLevel} />
+
+        {/* 가입 버튼 */}
+        <div className="pt-1">
+          <Button full type="submit" disabled={!canSubmit}>
+            회원가입
+          </Button>
+        </div>
+      </div>
+    </form>
+  );
 }

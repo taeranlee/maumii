@@ -1,74 +1,92 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import Layout from "../components/Layout";
 import Title from "../components/Title";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-    const navigate = useNavigate();
-    const [pw, setPw] = useState("");
-    const [userId, setUserId] = useState("");
+  const { login, isAuth } = useAuth();
+  const [uId, setUId] = useState("");
+  const [uPwd, setUPwd] = useState("");
+  const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!canSubmit) {
-            alert("빈 곳을 채워주세요");
-            return ;
-        }
+  // 이미 로그인 상태라면 홈으로 보냄
+  if (isAuth) return <Navigate to="/record" replace />;
 
-        const payload = { userId, pw };
-        navigate("/record", { state: payload });
-    };
-    return (
-        <form onSubmit={handleSubmit} className="flex-1 bg-white">
-            <div className="m-16">
-                <Title variant="auth">로그인</Title>
-            </div>
-            
-                <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-4">
-                    <Input
-                        label="아이디"
-                        placeholder="아이디를 입력해 주세요"
-                        value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                    />
-                    <Input
-                        label="비밀번호"
-                        placeholder="비밀번호를 입력해 주세요"
-                        value={pw}
-                        onChange={(e) => setPw(e.target.value)}
-                    />
-                    <div className="pt-2 space-y-1">
-                        <Button full type="submit">
-                            로그인
-                        </Button>
-                        <div className="text-end text-sm text-slate-400">
-                            회원가입
-                        </div>
-                    </div>
-                    {/* --- 옵션: 소셜 로그인 섹션 --- */}
-                    <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-200" />
-                        </div>
-                        <div className="relative flex justify-center">
-                        <span className="bg-white px-3 text-sm text-slate-500">다른 로그인</span>
-                        </div>
-                    </div>
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!uId || !uPwd) {
+      alert("아이디와 비밀번호를 입력해주세요.");
+      return;
+    }
+    try {
+      await login(uId, uPwd);   // Context의 login 함수 호출 → 세션 저장
+      navigate("/");            // 로그인 성공 후 홈으로 이동
+    } catch {
+      alert("로그인 실패");
+    }
+  };
 
-                    {/* 예시 버튼들 – 실제 연동 시 onClick에 핸들러 연결 */}
-                    <Button full variant="outline" onClick={() => alert("Kakao 로그인")} >
-                        KAKAO로 로그인
-                    </Button>
-                    <Button full variant="outline" onClick={() => alert("NAVER 로그인")} >
-                        NAVER로 로그인
-                    </Button>
-                    <Button full variant="outline" onClick={() => alert("Google 로그인")} >
-                        Google로 로그인
-                    </Button>
-                </div>
-            </form>
-    
-    );
+  return (
+    <form onSubmit={onSubmit} className="flex-1 bg-white">
+      <div className="m-16">
+        <Title variant="auth">로그인</Title>
+      </div>
+
+      <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-4">
+        <Input
+          label="아이디"
+          placeholder="아이디를 입력해 주세요"
+          value={uId}
+          onChange={(e) => setUId(e.target.value)}
+        />
+        <Input
+          label="비밀번호"
+          placeholder="비밀번호를 입력해 주세요"
+          type="password"
+          value={uPwd}
+          onChange={(e) => setUPwd(e.target.value)}
+        />
+        <div className="pt-2 space-y-1">
+          <Button full type="submit">
+            로그인
+          </Button>
+          <div className="text-end text-sm text-slate-400">회원가입</div>
+        </div>
+
+        {/* --- 옵션: 소셜 로그인 섹션 --- */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-white px-3 text-sm text-slate-500">다른 로그인</span>
+          </div>
+        </div>
+
+        <Button
+          full
+          variant="outline"
+          onClick={() => alert("Kakao 로그인")}
+        >
+          KAKAO로 로그인
+        </Button>
+        <Button
+          full
+          variant="outline"
+          onClick={() => alert("NAVER 로그인")}
+        >
+          NAVER로 로그인
+        </Button>
+        <Button
+          full
+          variant="outline"
+          onClick={() => alert("Google 로그인")}
+        >
+          Google로 로그인
+        </Button>
+      </div>
+    </form>
+  );
 }

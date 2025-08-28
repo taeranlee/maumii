@@ -1,8 +1,10 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate ,Outlet} from "react-router-dom";
 import Navigation from "./Navigation.jsx"; // 경로 확인!
+import { useApplyTheme } from "../useApplyTheme";
 
 // src/components/Layout.jsx
 export default function Layout({ children }) {
+  useApplyTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,7 +27,7 @@ export default function Layout({ children }) {
         "
       >
         <main className="flex-1 min-h-0">
-          {children}
+          <Outlet />
         </main>
 
         {/* 프레임 내부 하단 고정 네비 */}
