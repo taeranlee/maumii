@@ -1,7 +1,7 @@
 import { React } from "react";
 
 // 왼/오 말풍선 하나
-function Bubble({ me, text, sub }) {
+function Bubble({ me, text, sub, isActive }) {
   const avatar = "/src/assets/images/구르미.svg"; // 곰도리 사용(구르미.svg)
 
   return (
@@ -21,8 +21,9 @@ function Bubble({ me, text, sub }) {
           className={[
             "rounded-2xl px-4 py-3 whitespace-pre-wrap leading-6 shadow text-[14px]",
             me
-              ? "bg-rose-100 text-slate-800 rounded-br-md"
-              : "bg-amber-100 text-slate-800 rounded-bl-md",
+              ? "bg-cloud-mine text-slate-800 rounded-br-md"
+              : "bg-cloud-partner text-slate-800 rounded-bl-md",
+              isActive ? "shadow-[0_0_8px_rgba(126,104,255,0.7)]" : ""
           ].join(" ")}
         >
           {text}

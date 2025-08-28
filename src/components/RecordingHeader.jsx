@@ -1,6 +1,6 @@
-// components/RecordingHeader.jsx
+
 import React from "react";
-import PlayButton from "../components/PlayButton";
+import { FaPlay, FaPause } from "react-icons/fa";
 
 function SectionHeader({
   dateLabel,
@@ -8,6 +8,8 @@ function SectionHeader({
   progress = 0,       // 0 ~ 1
   onPlay = () => {},
   onSeek = null,      // (ratio: 0~1) => void
+  isActive = false,   // ✅ 추가
+  isPlaying = false,  // ✅ 추가
 }) {
   const pct = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
 
@@ -15,10 +17,18 @@ function SectionHeader({
     <div className="mt-6 mb-3">
       <div className="flex items-center gap-3 px-1">
         <div className="text-slate-700 font-semibold">{dateLabel}</div>
-        <PlayButton
+
+        {/* ▶️/⏸ 토글 */}
+        <button
           onClick={onPlay}
-          className="bg-button-record shadow hover:bg-indigo-700"
-        />
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-button-record text-white shadow"
+        >
+          {isActive && isPlaying ? (
+            <FaPause className="w-4 h-4 block m-auto" />
+          ) : (
+            <FaPlay className="w-4 h-4 block m-auto" />
+          )}
+        </button>
       </div>
 
       <div className="mt-3 flex items-center gap-3 px-1">

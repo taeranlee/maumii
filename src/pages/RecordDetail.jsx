@@ -82,6 +82,7 @@ export default function RecordDetail({ rlId = 5, userId = "null" }) {
   const [sections, setSections] = useState([]); // [{id, header, talks, rVoice}]
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // 오디오 재생기 (공용 1개)
   const audioRef = useRef(null);
@@ -221,6 +222,24 @@ export default function RecordDetail({ rlId = 5, userId = "null" }) {
  const [progress, setProgress] = useState(0);       // 0~1
  const [durationSec, setDurationSec] = useState(0); // 숫자(초)
 
+useEffect(() => {
+  const a = audioRef.current;
+  if (!a) return;
+  const onPlay = () => setIsPlaying(true);
+  const onPause = () => setIsPlaying(false);
+  const onEnded = () => setIsPlaying(false);
+
+  a.addEventListener("play", onPlay);
+  a.addEventListener("pause", onPause);
+  a.addEventListener("ended", onEnded);
+
+  return () => {
+    a.removeEventListener("play", onPlay);
+    a.removeEventListener("pause", onPause);
+    a.removeEventListener("ended", onEnded);
+  };
+}, []);
+
  // raf 루프
  useEffect(() => {
    const a = audioRef.current;
@@ -243,17 +262,24 @@ export default function RecordDetail({ rlId = 5, userId = "null" }) {
 const playSection = (section) => {
   const a = audioRef.current;
   if (!a || !section?.rVoice) return;
-  const src = absUrl(section.rVoice);   // ✅ 절대 URL로
-  if (!src) return;
+  const src = absUrl(section.rVoice);
 
-  if (a.src === src) {
-    a.paused ? a.play() : a.pause();
-  } else {
-    a.src = src;
-    a.currentTime = 0;
-    setActiveRecId(section.rId);
-    a.play();
+  // 같은 섹션이면 토글
+  if (section.rId === activeRecId && a.src === src) {
+    if (a.paused) {
+      a.play().then(() => setIsPlaying(true)).catch(()=>{});
+    } else {
+      a.pause();
+      setIsPlaying(false);
+    }
+    return;
   }
+
+  // 다른 섹션으로 변경
+  a.src = src;
+  a.currentTime = 0;
+  setActiveRecId(section.rId);
+  a.play().then(() => setIsPlaying(true)).catch(()=>{});
 };
 const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
 
@@ -360,7 +386,9 @@ const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
                   {...sec.header}
                   onPlay={() => playSection(sec)}
                   progress={getSectionProgress(sec)}
-                 onSeek={(r) => seekSection(sec, r)}
+                  onSeek={(r) => seekSection(sec, r)}
+                  isActive={sec.rId === activeRecId}   // ✅ 현재 재생중인 섹션인지
+                  isPlaying={isPlaying}                // ✅ 오디오가 재생중인지
                 />
                 {selectMode && (
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
@@ -375,25 +403,30 @@ const getSectionProgress = (sec) => (sec.rId === activeRecId ? progress : 0);
               </div>
 
               <div className="bg-white rounded-3xl pt-1 pb-3 px-3">
-                {sec.talks.map((t) => (
+              {sec.talks.map((t) => {
+                const a = audioRef.current;
+                const isActive =
+                  sec.rId === activeRecId &&
+                  a &&
+                  a.currentTime * 1000 >= t.startMs &&
+                  a.currentTime * 1000 < t.endMs;
+
+                return (
                   <div key={t.id}>
                     <button
                       type="button"
                       className="w-full text-left"
                       onClick={() => {
                         if (selectMode) return;
-                        // 편집 시트 오픈
                         openEditTalk(sec.id, t.id, t.text);
-                        // 원하면 여기서 특정 말풍선 구간부터 재생도 가능:
-                        // const a = audioRef.current;
-                        // if (a && sec.rVoice) { a.src = sec.rVoice; a.currentTime = (t.startMs/1000)+0.01; a.play(); }
                       }}
                     >
-                      <Bubble me={t.me} text={t.text} sub={t.sub} />
+                      <Bubble me={t.me} text={t.text} sub={t.sub} isActive={isActive} />
                     </button>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
               <div className="my-6 h-px w-full bg-slate-200" />
             </div>
