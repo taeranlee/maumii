@@ -10,12 +10,16 @@ export default function AuthBootstrap({ children }) {
     (async () => {
       try {
         if (!alive) return;
-        await fetchMe();      // 세션이 있으면 유저 복구
+        await fetchMe(); // 세션이 있으면 유저 복구
       } catch {
         if (alive) dispatch({ type: "SET_USER", payload: null }); // 비로그인
+      } finally {
+        if (alive) dispatch({ type: "SET_CHECKED", payload: true }); // ★ 검증 완료
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [fetchMe, dispatch]);
 
   return <>{children}</>;

@@ -6,13 +6,17 @@ import Title from "../components/Title";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const { login, isAuth } = useAuth();
+  const { login, isAuth, checked } = useAuth();
   const [uId, setUId] = useState("");
   const [uPwd, setUPwd] = useState("");
   const navigate = useNavigate();
 
   // 이미 로그인 상태라면 홈으로 보냄
-  if (isAuth) return <Navigate to="/record" replace />;
+  // 리다이렉트 조건도 로그 추가
+  if (checked && isAuth) {
+    console.log("=== 로그인 상태여서 /record로 리다이렉트 ===");
+    return <Navigate to="/record" replace />;
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -21,12 +25,19 @@ export default function Login() {
       return;
     }
     try {
-      await login(uId, uPwd);   // Context의 login 함수 호출 → 세션 저장
-      navigate("/");            // 로그인 성공 후 홈으로 이동
+      await login(uId, uPwd); // Context의 login 함수 호출 → 세션 저장
+      navigate("/record"); // 로그인 성공 후 홈으로 이동
     } catch {
       alert("로그인 실패");
     }
   };
+
+  console.log("Login 컴포넌트 렌더링:", {
+    isAuth,
+    checked,
+    user: "유저정보숨김",
+    "checked && isAuth": checked && isAuth,
+  });
 
   return (
     <form onSubmit={onSubmit} className="flex-1 bg-white">
@@ -61,29 +72,19 @@ export default function Login() {
             <div className="w-full border-t border-slate-200" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-white px-3 text-sm text-slate-500">다른 로그인</span>
+            <span className="bg-white px-3 text-sm text-slate-500">
+              다른 로그인
+            </span>
           </div>
         </div>
 
-        <Button
-          full
-          variant="outline"
-          onClick={() => alert("Kakao 로그인")}
-        >
+        <Button full variant="outline" onClick={() => alert("Kakao 로그인")}>
           KAKAO로 로그인
         </Button>
-        <Button
-          full
-          variant="outline"
-          onClick={() => alert("NAVER 로그인")}
-        >
+        <Button full variant="outline" onClick={() => alert("NAVER 로그인")}>
           NAVER로 로그인
         </Button>
-        <Button
-          full
-          variant="outline"
-          onClick={() => alert("Google 로그인")}
-        >
+        <Button full variant="outline" onClick={() => alert("Google 로그인")}>
           Google로 로그인
         </Button>
       </div>
