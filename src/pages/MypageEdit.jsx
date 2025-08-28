@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { api } from "../api/api"; // axios 사용 시
+import api from "../api/api"; // axios 사용 시
 
 export default function MypageEdit() {
   const [phone, setPhone] = useState("");
@@ -45,9 +45,7 @@ export default function MypageEdit() {
     } catch (err) {
       console.error(err);
       alert(
-        err?.response?.data?.message ||
-          err?.message ||
-          "저장에 실패했습니다."
+        err?.response?.data?.message || err?.message || "저장에 실패했습니다."
       );
     } finally {
       setLoading(false);
