@@ -28,7 +28,7 @@ export default function Login() {
       await login(uId, uPwd); // Context의 login 함수 호출 → 세션 저장
       navigate("/record"); // 로그인 성공 후 홈으로 이동
     } catch {
-      alert("로그인 실패");
+      alert("아이디 혹은 비밀번호가 올바르지 않습니다.");
     }
   };
 

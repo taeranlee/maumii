@@ -4,27 +4,58 @@ import { Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import api from "../api/api"; // axios 사용 시
+import api from "../api/api";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../hooks/useTheme";
+import cloudImg from "../assets/images/emotion/cloud.png";
+import bearImg from "../assets/images/emotion/bear.png";
 
 export default function MypageEdit() {
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
 
-  // 화면에서 “확인” 누른 값 (서버로 보낼 준비된 값)
+  // 화면에서 "확인" 누른 값 (서버로 보낼 준비된 값)
   const [staged, setStaged] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const uId = localStorage.getItem("uId") || "yo"; // 임시
+  const { user, updateUserInfo } = useAuth();
+  const { currentTheme } = useTheme();
+
+  const avatarByTheme = {
+    cloud: cloudImg,
+    bear: bearImg,
+  };
+  const avatarSrc = avatarByTheme[currentTheme] || avatarByTheme.cloud;
 
   const canSave = useMemo(() => Object.keys(staged).length > 0, [staged]);
 
   const stagePhone = () => {
-    if (!phone.trim()) return;
+    if (!phone.trim()) {
+      alert("전화번호를 입력해주세요.");
+      return;
+    }
+
+    // 전화번호 형식 검증
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(phone.trim())) {
+      alert("전화번호 형식을 확인해주세요. (예: 010-1234-5678)");
+      return;
+    }
+
     setStaged((prev) => ({ ...prev, uPhone: phone.trim() }));
   };
 
   const stagePw = () => {
-    if (!pw.trim()) return;
+    if (!pw.trim()) {
+      alert("비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (pw.trim().length < 4) {
+      alert("비밀번호는 4자 이상 입력해주세요.");
+      return;
+    }
+
     setStaged((prev) => ({ ...prev, uPwd: pw.trim() }));
   };
 
@@ -32,25 +63,64 @@ export default function MypageEdit() {
     e.preventDefault();
     if (!canSave || loading) return;
 
+    // 사용자 ID가 없으면 처리할 수 없음
+    if (!user?.uId) {
+      alert("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+      return;
+    }
+
     try {
       setLoading(true);
-      // PATCH /api/users/{uId}/account
-      await api.patch(`/api/users/${uId}/account`, staged, {
+
+      // PUT /api/users/{uId}/account - 컨트롤러와 일치
+      await api.put(`/api/users/${user.uId}/account`, staged, {
         headers: { "Content-Type": "application/json" },
       });
+
       alert("저장되었습니다.");
+      window.location.reload();
+      // 성공 후 초기화
       setStaged({});
       setPw("");
-      // phone은 유지/리셋은 취향대로
+      setPhone("");
     } catch (err) {
-      console.error(err);
-      alert(
-        err?.response?.data?.message || err?.message || "저장에 실패했습니다."
-      );
+      console.error("계정 정보 업데이트 실패:", err);
+
+      // 에러 메시지 처리
+      let errorMessage = "저장에 실패했습니다.";
+
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.status === 404) {
+        errorMessage = "사용자를 찾을 수 없습니다.";
+      } else if (err?.response?.status === 400) {
+        errorMessage = "입력 정보를 확인해주세요.";
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  // 로그인하지 않은 사용자 처리
+  if (!user) {
+    return (
+      <div className="mx-auto w-full max-w-[330px]">
+        <Title variant="default" className="mt-10">
+          프로필 변경
+        </Title>
+        <div className="text-center mt-20">
+          <p className="text-gray-500 mb-4">로그인이 필요합니다.</p>
+          <Link to="/login">
+            <Button>로그인하러 가기</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[330px]">
@@ -68,18 +138,33 @@ export default function MypageEdit() {
 
       <div className="grid place-items-center text-center space-y-4 p-5">
         <div
-          className="w-24 h-24 shadow-[0_0px_8px_rgba(169,96,176,0.4)]"
+          className="w-32 h-32 shadow-[0_0px_8px_rgba(169,96,176,0.4)]"
           style={{ borderRadius: "10px" }}
-        />
+        >
+          <img
+            src={avatarSrc}
+            alt="User Avatar"
+            className="w-full h-full object-cover rounded-[10px] px-1 py-2"
+          />
+        </div>
         <h2
           className="text-lg font-bold"
           style={{ letterSpacing: "5px", display: "inline-block" }}
         >
-          김이름
+          {user?.uName || "사용자"}
         </h2>
       </div>
 
       <form className="overflow-y-auto h-full bg-white" onSubmit={onSubmit}>
+        {/* 현재 전화번호 표시 */}
+        {user?.uPhone && (
+          <div className="px-1 mb-2">
+            <p className="text-sm text-gray-600">
+              현재 전화번호: {user.uPhone}
+            </p>
+          </div>
+        )}
+
         {/* 전화번호 */}
         <div className="flex items-end gap-2 mt-6 px-1">
           <Input
@@ -100,7 +185,7 @@ export default function MypageEdit() {
             className="flex-1"
             label="비밀번호 변경하기"
             type="password"
-            placeholder="비밀번호"
+            placeholder="새 비밀번호 (4자 이상)"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
           />
@@ -109,12 +194,12 @@ export default function MypageEdit() {
           </Button>
         </div>
 
-        {/* 저장 예정 표시(선택) */}
+        {/* 저장 예정 표시 */}
         {canSave && (
           <div className="text-xs text-gray-500 mt-3 px-1">
             저장 예정:{" "}
             {[
-              staged.uPhone ? "전화번호" : null,
+              staged.uPhone ? `전화번호(${staged.uPhone})` : null,
               staged.uPwd ? "비밀번호" : null,
             ]
               .filter(Boolean)

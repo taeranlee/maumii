@@ -1,19 +1,38 @@
-import { useLocation, useNavigate ,Outlet} from "react-router-dom";
+import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import Navigation from "./Navigation.jsx"; // 경로 확인!
 import { useApplyTheme } from "../useApplyTheme";
 
 // src/components/Layout.jsx
-export default function Layout({ children }) {
+export default function Layout() {
   useApplyTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
   // 경로 ↔ 탭 키 매핑 (원하는 대로 수정 가능)
-  const pathToKey = { "/": "record", "/record": "mic", "/mypage": "mypage" };
-  const keyToPath = { record: "/record-list", mic: "/record", mypage: "/mypage" };
+  const pathToKey = {
+    "/": "record",
+    "/record": "mic",
+    "/mypage": "mypage",
+  };
 
-  const active = pathToKey[location.pathname] ?? "record";
-  const hideNav = ["/login", "/register", "/register/detail","/"].includes(location.pathname); // 로그인/회원가입에서 네비 숨김
+  const keyToPath = {
+    record: "/record-list",
+    mic: "/record",
+    mypage: "/mypage",
+  };
+
+  // 경로 → 탭 키 변환
+  let active = "record";
+  if (location.pathname.startsWith("/mypage")) {
+    active = "mypage";
+  } else if (location.pathname.startsWith("/record")) {
+    active = "mic";
+  } else {
+    active = pathToKey[location.pathname] ?? "record";
+  }
+  const hideNav = ["/login", "/register", "/register/detail", "/"].includes(
+    location.pathname
+  ); // 로그인/회원가입에서 네비 숨김
 
   return (
     <div className="h-full md:grid md:place-items-center md:bg-slate-200">
@@ -39,7 +58,6 @@ export default function Layout({ children }) {
             />
           </div>
         )}
-
       </div>
     </div>
   );

@@ -41,6 +41,13 @@ function reducer(state, action) {
       console.log("✅ SET_USER 후 상태:", newStateSetUser);
       return newStateSetUser;
 
+    case "UPDATE_USER":
+      // 사용자 정보 부분 업데이트
+      const updatedUser = { ...state.user, ...action.payload };
+      const newStateUpdateUser = { ...state, user: updatedUser };
+      console.log("🔄 UPDATE_USER 후 상태:", newStateUpdateUser);
+      return newStateUpdateUser;
+
     case "SET_CHECKED":
       const newStateSetChecked = { ...state, checked: action.payload };
       console.log("SET_CHECKED 후 상태:", newStateSetChecked);
@@ -68,7 +75,7 @@ export function AuthProvider({ children }) {
 
       try {
         console.log("=== /auth/me API 호출 시작 ===");
-        const response = await api.get("/auth/me");
+        const response = await api.get("/api/auth/me");
         console.log("API 응답:", response);
 
         // 응답이 실제 사용자 데이터인지 확인
@@ -148,6 +155,11 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  // 새로운 함수: 로컬 사용자 정보 업데이트 (서버 호출 없이)
+  const updateUserInfo = useCallback((updatedInfo) => {
+    dispatch({ type: "UPDATE_USER", payload: updatedInfo });
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post("/api/auth/logout");
@@ -156,14 +168,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // 401 응답 시 자동 로그아웃
+  // 401 응답 시 자동 로그아웃 - 더 유연하게 처리
   useEffect(() => {
     const id = api.interceptors.response.use(
       (res) => res,
       (error) => {
+        console.log(
+          "API 에러 발생:",
+          error.response?.status,
+          error.config?.url
+        );
+
+        // 401 에러가 발생한 경우
         if (error?.response?.status === 401) {
-          dispatch({ type: "LOGOUT" });
+          // 로그인/로그아웃 관련 API가 아닌 경우에만 자동 로그아웃
+          const isAuthAPI = error.config?.url?.includes("/auth/");
+
+          if (!isAuthAPI) {
+            console.log("🚨 인증이 필요한 API에서 401 발생, 로그아웃 처리");
+            dispatch({ type: "LOGOUT" });
+          } else {
+            console.log("🔄 인증 API에서 401 발생, 로그아웃 처리하지 않음");
+          }
         }
+
         return Promise.reject(error);
       }
     );
@@ -171,8 +199,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ ...state, login, fetchMe, logout, dispatch }),
-    [state, login, fetchMe, logout]
+    () => ({ ...state, login, fetchMe, updateUserInfo, logout, dispatch }),
+    [state, login, fetchMe, updateUserInfo, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
