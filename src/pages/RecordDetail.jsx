@@ -10,7 +10,7 @@ import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useRecords } from "../hooks/useRecords.js";
 
 
-export default function RecordDetail({ userId = "null" }) {
+export default function RecordDetail({ userId = "kosa" }) {
   const { rlId } = useParams();
   const { title, setTitle, sections, loading, error } = useRecords(rlId, userId);
   const {
