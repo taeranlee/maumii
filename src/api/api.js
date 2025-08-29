@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:9000", // 컨트롤러 @RequestMapping("/api/auth")에 맞춤
+  baseURL: "http://localhost:9000", //
   withCredentials: true, // 세션(JSESSIONID) 유지
   headers: { "Content-Type": "application/json" }, // ★ JSON 고정
   transformRequest: [
