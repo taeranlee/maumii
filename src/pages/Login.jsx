@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import Title from "../components/Title";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom";
 
 export default function Login() {
   const { login, isAuth, checked } = useAuth();
   const [uId, setUId] = useState("");
   const [uPwd, setUPwd] = useState("");
+  const [kakaoLoading, setKakaoLoading] = useState(false);
   const navigate = useNavigate();
 
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("error")) {
+      alert("로그인에 실패했습니다. 다시 시도해주세요.");
+    }
+  }, [location]);
   // 이미 로그인 상태라면 홈으로 보냄
   // 리다이렉트 조건도 로그 추가
   if (checked && isAuth) {
@@ -77,10 +87,20 @@ export default function Login() {
             </span>
           </div>
         </div>
+        
 
-        <Button full variant="outline" onClick={() => alert("Kakao 로그인")}>
-          KAKAO로 로그인
-        </Button>
+      <Button
+        full
+        variant="outline"
+        disabled={kakaoLoading}
+        onClick={() => {
+          if (kakaoLoading) return;
+          setKakaoLoading(true);
+          window.location.href = "http://localhost:9000/oauth2/authorization/kakao";
+        }}
+      >
+        {kakaoLoading ? "연결 중..." : "KAKAO로 로그인"}
+      </Button>
         <Button full variant="outline" onClick={() => alert("NAVER 로그인")}>
           NAVER로 로그인
         </Button>
