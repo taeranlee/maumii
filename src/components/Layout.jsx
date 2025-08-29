@@ -23,13 +23,14 @@ export default function Layout() {
 
   // 경로 → 탭 키 변환
   let active = "record";
+
   if (location.pathname.startsWith("/mypage")) {
     active = "mypage";
-  } else if (location.pathname.startsWith("/record")) {
+  } else if (location.pathname.startsWith("/record-list")){
+    active = "record";
+  }else if (location.pathname.startsWith("/record")) {
     active = "mic";
-  } else {
-    active = pathToKey[location.pathname] ?? "record";
-  }
+  } 
   const hideNav = ["/login", "/register", "/register/detail", "/"].includes(
     location.pathname
   ); // 로그인/회원가입에서 네비 숨김
