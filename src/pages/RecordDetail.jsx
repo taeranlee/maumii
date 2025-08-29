@@ -1,3 +1,4 @@
+import axios from "axios";
 import{ useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/header";
@@ -8,10 +9,12 @@ import Bubble from "../components/Bubble";
 import { createPortal } from "react-dom";
 import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useRecords } from "../hooks/useRecords.js";
+import ConfirmModal from "../components/ConfirmModal";
 
-
-export default function RecordDetail({ userId = "kosa" }) {
-  const { rlId } = useParams();
+export default function RecordDetail({ userId = "kosa1" }) {
+  const { rlId } = useParams(); // 문자열 "6"로 들어옴
+  const rlIdNum = Number(rlId); // 숫자 6으로 변환
+  
   const { title, setTitle, sections, loading, error } = useRecords(rlId, userId);
   const {
     audioRef,
@@ -22,12 +25,44 @@ export default function RecordDetail({ userId = "kosa" }) {
     seek,
   } = useAudioPlayer();
 
-  // 제목 인라인 수정
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  // 컴포넌트 최상단
+  const [localSections, setLocalSections] = useState(sections);
 
-  // 선택/삭제 상태
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedSectionIds, setSelectedSectionIds] = useState([]);
+  // useEffect로 훅에서 sections가 바뀌면 localSections 동기화
+  useEffect(() => {
+    if (sections.length > 0 && localSections.length === 0) {
+      setLocalSections(sections);
+    }
+  }, [sections]);
+
+  // 제목 인라인 수정
+  const [editTitleValue, setEditTitleValue] = useState(""); // input에서 편집 용 상태 ... 취소 버튼 위해
+  useEffect(() => {
+    setEditTitleValue(title);
+  }, [title]);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  // 리스트 제목 수정 ... 백엔드 컨트롤러 호출
+  const handleUpdateTitle = async(rlId, editTitleValue) => {
+    if(title === editTitleValue) { // 제목 변경 없으면 리턴
+      return;
+    }
+    try {
+      const res = await axios.put(
+        `http://localhost:9000/api/records/record-list/${rlId}`,
+        {
+          rlName: editTitleValue,
+          uId: userId, // props 에서 바로 사용
+        }
+      );
+      // 성공 시 화면 반영
+      setTitle(res.data.rlName); 
+      setEditTitleValue(res.data.rlName); // 편집 상태도 갱신
+      setIsEditingTitle(false); // 편집 모드 종료
+    } catch (err) {
+      console.error("수정 실패:", err);
+      alert("녹음 리스트 제목 수정에 실패했습니다.");
+    }
+  }
 
   // 말풍선 편집 시트
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -47,21 +82,49 @@ export default function RecordDetail({ userId = "kosa" }) {
     return () => cancelAnimationFrame(raf);
   }, [audioRef]);
 
+
+    // 선택/삭제 상태
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedSectionIds, setSelectedSectionIds] = useState([]);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [targetSectionIds, setTargetSectionIds] = useState([]); // 삭제 대상
   // 섹션 토글/삭제
-  const toggleSection = (sid) => {
+  const toggleSection = (rId) => {
     setSelectedSectionIds((prev) =>
-      prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]
+      prev.includes(rId)
+      ? prev.filter(x => x !== rId)
+      : [...prev, rId]
     );
   };
-  const handleDeleteSections = () => {
-    if (selectedSectionIds.length === 0) return;
-    // 프론트에서만 제거(백엔드 삭제는 별도 API 필요)
-    const remain = sections.filter((s) => !selectedSectionIds.includes(s.id));
-    // sections는 훅의 상태이므로 화면만 정리하고 싶다면 별도 로컬 상태가 필요하지만
-    // 여기서는 선택모드 초기화만 처리
-    setSelectedSectionIds([]);
-    setSelectMode(false);
-    console.warn("섹션 삭제는 아직 백엔드 연동 필요. 남은 섹션 수:", remain.length);
+  // 녹음 다중 삭제 ... 백엔드 컨트롤러 호출
+  const handleDeleteSections = async (idsToDelete) => {
+    if (!idsToDelete || idsToDelete.length === 0) return;
+
+    try {
+      // console.log(selectedSectionIds);
+      await axios.delete(
+        "http://localhost:9000/api/records/record",
+        {
+          data: idsToDelete.map(Number) // DELETE 요청은 body에 data 필드로 전달
+        }
+      );
+
+      // 성공 시 프론트에서 선택 삭제 반영
+      // sections는 useRecords 훅에서 가져온 상태
+      const remain = localSections.filter(s => !idsToDelete.includes(s.rId));
+      setLocalSections(remain);
+      // sections를 훅에서 내려준 상태라면 재조회가 필요하지만,
+      // 화면에서 바로 제거하려면 로컬 상태를 따로 관리하거나 훅 재조회
+      setSelectedSectionIds([]);
+      setSelectMode(false);
+      console.log("삭제 완료. 남은 섹션 수:", remain.length);
+
+      // 선택 삭제 후 화면 갱신 (예: useRecords 훅 재조회)
+      // setSections(remain); // 훅이 로컬 상태를 반환하도록 구현돼 있다면 가능
+    } catch (err) {
+      console.error("삭제 실패:", err);
+      alert("녹음 삭제에 실패했습니다.");
+    }
   };
 
   // 말풍선 편집
@@ -92,17 +155,47 @@ export default function RecordDetail({ userId = "kosa" }) {
       <audio ref={audioRef} className="hidden" />
 
       {/* HEADER */}
-      <Header
+      <Header center={false} shadow={true} fix={true}
         title={
           isEditingTitle ? (
-            <input
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-transparent outline-none border-b border-slate-300 text-base"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                value={editTitleValue}
+                onChange={(e) => setEditTitleValue(e.target.value)}
+                className="w-40 bg-transparent outline-none border-b border-slate-300 text-base"
+              />
+              <button
+                onClick={() => {
+                  handleUpdateTitle(rlIdNum, editTitleValue); // 저장 후 화면 반영
+                }}
+                className="flex items-center gap-2 text-sm text-slate-600"
+              >
+                <span className="px-2 py-1 rounded-md bg-button-edit text-white">
+                  저장
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditTitleValue(title); // 원래 값으로 되돌리기
+                  setIsEditingTitle(false);
+                }}
+                className="flex items-center gap-2 text-sm text-slate-600 rounded-md border border-slate-300"
+              >
+                <span className="px-2 py-1 rounded-md">취소</span>
+              </button>
+            </div>
+
           ) : (
-            title
+            <div className="flex items-center gap-2">
+              {title}
+              <button
+                onClick={() => setIsEditingTitle(true)}
+                className="flex items-center gap-2 text-sm text-slate-600"
+              >
+                <FaRegEdit className="w-4 h-4 -top-[1px] relative" />
+              </button>
+            </div>
           )
         }
         rightSlot={
@@ -110,7 +203,10 @@ export default function RecordDetail({ userId = "kosa" }) {
             {selectMode ? (
               <>
                 <button
-                  onClick={handleDeleteSections}
+                  onClick={ () => {
+                    setTargetSectionIds(selectedSectionIds); // 선택된 섹션 저장
+                    setOpenDeleteModal(true);                 // 모달 열기
+                  }}
                   className="flex items-center gap-1 text-sm text-red-600"
                 >
                   <FiTrash2 className="w-4 h-4 -top-[1px] relative" />
@@ -127,20 +223,6 @@ export default function RecordDetail({ userId = "kosa" }) {
               </>
             ) : (
               <>
-                <button
-                  onClick={() => setIsEditingTitle((v) => !v)}
-                  className="flex items-center gap-2 text-sm text-slate-600"
-                >
-                  {isEditingTitle ? (
-                    <span className="px-2 py-1 rounded-md bg-button-edit text-white">
-                      저장
-                    </span>
-                  ) : (
-                    <>
-                      <FaRegEdit className="w-4 h-4 -top-[1px] relative" />
-                    </>
-                  )}
-                </button>
                 <button
                   onClick={() => setSelectMode(true)}
                   className="text-sm text-slate-600"
@@ -161,11 +243,11 @@ export default function RecordDetail({ userId = "kosa" }) {
         {error && (
           <div className="py-2 text-center text-red-500 text-sm">{error}</div>
         )}
-        {!loading && sections.length === 0 && !error && (
+        {!loading && localSections.length === 0 && !error && (
           <div className="py-8 text-center text-slate-500">기록이 없습니다.</div>
         )}
 
-        {sections.map((sec) => {
+        {localSections.map((sec) => {
           const checked = selectedSectionIds.includes(sec.id);
           const isActiveSection = sec.rId === activeRecId;
           const nowMs = isActiveSection ? currentTimeMs : -1;
@@ -185,8 +267,8 @@ export default function RecordDetail({ userId = "kosa" }) {
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleSection(sec.id)}
+                      checked={selectedSectionIds.includes(sec.rId)}
+                      onChange={() => toggleSection(sec.rId)}
                       className="accent-purple-600 w-4 h-4"
                     />
                   </label>
@@ -201,17 +283,18 @@ export default function RecordDetail({ userId = "kosa" }) {
                       <button
                         type="button"
                         className="w-full text-left"
-                        onClick={() => {
-                          const a = audioRef.current;
-                          if (!a) return;
-                          // 현재 섹션이 아니면 먼저 섹션 재생(소스 세팅)
-                          if (!isActiveSection) {
-                            playSection(sec);
-                          }
-                          // 해당 말풍선 시작으로 점프
-                          a.currentTime = t.startMs / 1000 + 0.01;
-                          a.play();
-                        }}
+                        onClick={() => openEditTalk(sec.id, t.id, t.text)}
+                        // onClick={() => {
+                        //   const a = audioRef.current;
+                        //   if (!a) return;
+                        //   // 현재 섹션이 아니면 먼저 섹션 재생(소스 세팅)
+                        //   if (!isActiveSection) {
+                        //     playSection(sec);
+                        //   }
+                        //   // 해당 말풍선 시작으로 점프
+                        //   a.currentTime = t.startMs / 1000 + 0.01;
+                        //   a.play();
+                        // }}
                       >
                         <Bubble me={t.me} text={t.text} sub={t.sub} isActive={isActiveBubble} emotion={t.emotion} />
                       </button>
@@ -278,6 +361,21 @@ export default function RecordDetail({ userId = "kosa" }) {
           </div>,
           document.body
         )}
+
+        <ConfirmModal
+          isOpen={openDeleteModal}
+          title="정말 삭제하시겠습니까?"
+          description="선택한 녹음 기록이 사라집니다."
+          onConfirm={async () => {
+            setOpenDeleteModal(false); // 모달 닫기
+            await handleDeleteSections(targetSectionIds); // 실제 삭제
+            setTargetSectionIds([]); // 초기화
+          }}
+          onCancel={() => {
+            setOpenDeleteModal(false);
+            setTargetSectionIds([]);
+          }}
+        />
     </div>
   );
 }
