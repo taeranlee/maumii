@@ -68,7 +68,7 @@ export function AuthProvider({ children }) {
 
       try {
         console.log("=== /auth/me API 호출 시작 ===");
-        const response = await api.get("/auth/me");
+        const response = await api.get("/api/auth/me");
         console.log("API 응답:", response);
 
         // 응답이 실제 사용자 데이터인지 확인
