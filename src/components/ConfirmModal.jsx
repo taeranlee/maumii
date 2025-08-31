@@ -1,6 +1,8 @@
+// src/components/Modal.jsx
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function ConfirmModal({
+export default function Modal({
   isOpen,
   mode = "confirm", // "confirm" | "alert"
   title,
@@ -9,55 +11,72 @@ export default function ConfirmModal({
   onCancel,
   children,
 }) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-      <div className="bg-white rounded-xl shadow-lg w-80 text-center p-6">
-        {/* 제목 */}
-        {title && (
-          <h2 className="text-lg font-bold text-gray-800 mb-4">{title}</h2>
-        )}
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* dim */}
+          <motion.div
+            className="absolute inset-0 bg-black bg-opacity-40"
+            onClick={onCancel}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
 
-        {/* 설명 */}
-        {description && (
-          <p className="text-gray-600 text-sm mb-6 whitespace-pre-line">
-            {description}
-          </p>
-        )}
+          {/* card */}
+          <motion.div
+            className="relative bg-white rounded-xl shadow-lg w-80 text-center overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.98, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 제목 */}
+            {title && <h2 className="text-400 font-bold pt-6 mb-3">{title}</h2>}
 
-        {/* input/select 등 삽입 */}
-        {children && <div className="mb-6">{children}</div>}
+            {/* 설명 */}
+            {description && (
+              <p className="text-gray-600 text-sm mb-4">{description}</p>
+            )}
 
-        <hr className="mb-4" />
+            {/* input/select 등 삽입 */}
+            {children && <div className="mb-6">{children}</div>}
 
-        {/* 버튼 영역 */}
-        {mode === "confirm" ? (
-          <div className="flex divide-x divide-gray-300 justify-between">
-            <button
-              onClick={onCancel}
-              className="w-1/2 py-3 rounded-l-xl text-gray-600 font-semibold hover:bg-gray-100"
-            >
-              아니오
-            </button>
-            <button
-              onClick={onConfirm}
-              className="w-1/2 py-3 rounded-r-xl text-purple-600 font-semibold hover:bg-purple-50"
-            >
-              예
-            </button>
-          </div>
-        ) : (
-          <div>
-            <button
-              onClick={onCancel}
-              className="w-full py-3 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700"
-            >
-              닫기
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+            <hr />
+
+            {/* 버튼 영역 (디자인 그대로) */}
+            {mode === "confirm" ? (
+              <div className="flex divide-x divide-gray-300 justify-between">
+                <button
+                  onClick={onCancel}
+                  className="w-1/2 py-4 text-400 font-semibold"
+                >
+                  아니오
+                </button>
+                <button
+                  onClick={onConfirm}
+                  className="w-1/2 py-4 text-400 font-semibold"
+                >
+                  예
+                </button>
+              </div>
+            ) : (
+              <div className="flex">
+                <button
+                  onClick={onCancel}
+                  className="w-full py-4 text-400 font-semibold"
+                >
+                  닫기
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

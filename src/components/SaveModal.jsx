@@ -51,24 +51,24 @@ export default function SaveModal({ open, onClose, lists, onConfirm }) {
           {mode === "select" ? (
             <div className="flex gap-3">
               <div className="relative flex-1">
-  <select
-    className="w-full border rounded-lg px-3 py-2 bg-gray-50 appearance-none pr-10"
-    value={selectedId ?? ""}
-    onChange={(e) => setSelectedId(e.target.value || null)}
-  >
-    <option value="">새 기록함 만들기…</option>
-    {lists.map((it) => (
-      <option key={it.rlId} value={it.rlId}>
-   {it.rlName}
- </option>
-    ))}
-  </select>
+                <select
+                  className="w-full border rounded-lg px-3 py-2 bg-gray-50 appearance-none pr-10"
+                  value={selectedId ?? ""}
+                  onChange={(e) => setSelectedId(e.target.value || null)}
+                >
+                  <option value="">새 기록함 만들기…</option>
+                  {lists.map((it) => (
+                    <option key={it.rlId} value={it.rlId}>
+                      {it.rlName}
+                    </option>
+                  ))}
+                </select>
 
-  {/* 화살표 아이콘 */}
-  <span className=" absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-    ▼
-  </span>
-</div>
+                {/* 화살표 아이콘 */}
+                <span className=" absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                  ▼
+                </span>
+              </div>
               <button
                 className="text-sm px-3 py-2 border rounded-lg"
                 onClick={() => setMode("new")}

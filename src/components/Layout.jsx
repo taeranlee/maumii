@@ -40,7 +40,7 @@ export default function Layout() {
         </main>
 
         {!hideNav && (
-          <div className="absolute inset-x-0 bottom-0 z-10 pb-[max(0px,env(safe-area-inset-bottom))] bg-white/90 backdrop-blur border-t border-slate-200">
+          <div className="absolute inset-x-0 bottom-0 z-10 pb-[max(0px,env(safe-area-inset-bottom))] backdrop-blur border-slate-200">
             <Navigation active={active} onChange={(key) => navigate(keyToPath[key])} />
           </div>
         )}
