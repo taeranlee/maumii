@@ -12,10 +12,12 @@ import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useRecords } from "../hooks/useRecords.js";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../hooks/useTheme";
 
 export default function RecordDetail() {
   const { user } = useAuth();
   const userId = user?.uId;
+  const { currentTheme } = useTheme(); // 전역 테마 (cloud | bear)
 
   const { rlId } = useParams(); // 문자열 "6"로 들어옴
   const rlIdNum = Number(rlId); // 숫자 6으로 변환
@@ -66,16 +68,6 @@ export default function RecordDetail() {
       alert("녹음 리스트 제목 수정에 실패했습니다.");
     }
   };
-
-  const emotions = [
-    { key: "happy", img: "src/assets/images/emotion/cloud_happy.png" },
-    { key: "sad", img: "/emotions/sad.png" },
-    { key: "angry", img: "/emotions/angry.png" },
-    { key: "neutral", img: "/emotions/neutral.png" },
-    { key: "surprised", img: "/emotions/surprised.png" },
-    { key: "fear", img: "/emotions/fear.png" },
-    { key: "disgust", img: "/emotions/disgust.png" },
-  ];
 
   // 말풍선 편집 시트
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -135,17 +127,50 @@ export default function RecordDetail() {
   };
 
   // 말풍선 편집
-  const openEditTalk = (sectionId, talkId, currentText) => {
-    setEditingTalk({ sectionId, talkId, text: currentText });
+  const openEditTalk = (sectionId, talkId, currentText, currentEmotion) => {
+    setEditingTalk({ 
+      sectionId, 
+      talkId, 
+      text: currentText,
+      emotion: currentEmotion,
+    });
     setSheetOpen(true);
   };
-  const saveTalkText = () => {
+  const saveTalkText = async () => {
     if (!editingTalk) return;
-    // 화면상 텍스트만 바꿔주는 경우라면 훅에서 내려준 sections를 직접 수정할 수 없으니
-    // 보통은 상위에서 sections 상태를 로컬로 복사해 관리하거나 편집 API 호출 후 재조회가 필요.
-    console.warn("저장은 API 연동 후 재조회 필요");
-    setSheetOpen(false);
-    setEditingTalk(null);
+
+    console.log("PUT payload:", { bText: editingTalk.text, bEmotion: editingTalk.emotion });
+
+    try {
+      const res = await axios.put(
+        `http://localhost:9000/api/records/bubble/${editingTalk.talkId}`,
+        {
+          bText: editingTalk.text,
+          bEmotion: editingTalk.emotion,
+        }
+      );
+      const { bText, bEmotion } = res.data;
+      console.log("bText 이랑 bEmotion 출력 테스트 : "+bText+bEmotion);
+
+      setLocalSections((prevSections) =>
+        prevSections.map((sec) => {
+          if (sec.id !== editingTalk.sectionId) return sec;
+
+          return {
+            ...sec,
+            talks: sec.talks.map((t) =>
+              t.id === editingTalk.talkId ? { ...t, text: bText, emotion: bEmotion } : t
+            ),
+          };
+        })
+      );
+
+      setSheetOpen(false); // sheet 닫기
+      setEditingTalk(null); // editingTalk 초기화
+    } catch (err) {
+      console.error("버블 수정 실패:", err);
+      alert("버블 수정에 실패했습니다.");
+    }
   };
 
   const TABBAR_H = 100;
@@ -292,13 +317,12 @@ export default function RecordDetail() {
 
               <div className="bg-white rounded-3xl pt-1 pb-3 px-3">
                 {sec.talks.map((t) => {
-                  const isActiveBubble = nowMs >= t.startMs && nowMs < t.endMs;
                   return (
                     <div key={t.id}>
                       <button
                         type="button"
                         className="w-full text-left"
-                        onClick={() => openEditTalk(sec.id, t.id, t.text)}
+                        onClick={() => openEditTalk(sec.id, t.id, t.text, t.emotion)}
                         // onClick={() => {
                         //   const a = audioRef.current;
                         //   if (!a) return;
@@ -311,11 +335,11 @@ export default function RecordDetail() {
                         //   a.play();
                         // }}
                       >
-                        <Bubble
+                        <Bubble 
                           me={t.me}
                           text={t.text}
                           sub={t.sub}
-                          isActive={isActiveBubble}
+                          isActive={nowMs >= t.startMs && nowMs < t.endMs}
                           emotion={t.emotion}
                         />
                       </button>
@@ -348,13 +372,13 @@ export default function RecordDetail() {
                 <div className="text-lg font-semibold mb-3 mt-3 pt-6 pb-2 text-center">
                   녹음 내용 수정하기
                 </div>
-                <div className="flex justify-center mt-4 px-4 pb-6">
+                <div className="flex justify-center flex-wrap mt-4 px-4 pb-6">
                     {EMOTIONS.map((em) => {
                       const selected = editingTalk?.emotion === em.name; // 현재 선택된 감정과 비교
                       return (
                         <div
                           key={em.id}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer
+                          className={`w-20 h-20 rounded-full flex items-center justify-center cursor-pointer
                             transition-all duration-200 transition-transfrom
                             ${selected ? "shadow-[0_0_8px_rgba(126,104,255,0.7)] scale-110" : "ring-0 scale-100"}
                           `}
@@ -362,7 +386,7 @@ export default function RecordDetail() {
                             setEditingTalk(prev => prev ? { ...prev, emotion: em.name } : prev)
                           }
                         >
-                          <img src={`src/assets/images/emotion/cloud_${em.id}.png`} alt={em.name} className="w-8 h-8" />
+                          <img src={em.image[currentTheme]} alt={em.name} className="w-16 h-16" />
                         </div>
                       );
                     })}
@@ -372,9 +396,7 @@ export default function RecordDetail() {
                     className="w-full min-h-[140px] rounded-xl border border-slate-200 p-3 outline-none"
                     value={editingTalk.text}
                     onChange={(e) =>
-                      setEditingTalk((prev) =>
-                        prev ? { ...prev, text: e.target.value } : prev
-                      )
+                      setEditingTalk((prev) => prev ? { ...prev, text: e.target.value } : prev )
                     }
                   />
                   <div className="flex justify-between gap-2 mt-3">
