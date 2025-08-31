@@ -7,25 +7,17 @@ import Input from "../components/Input";
 import api from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../hooks/useTheme";
-import cloudImg from "../assets/images/emotion/cloud.png";
-import bearImg from "../assets/images/emotion/bear.png";
 
 export default function MypageEdit() {
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
-
   // 화면에서 "확인" 누른 값 (서버로 보낼 준비된 값)
   const [staged, setStaged] = useState({});
   const [loading, setLoading] = useState(false);
 
   const { user, updateUserInfo } = useAuth();
-  const { currentTheme } = useTheme();
+  const { themeConfig } = useTheme();
 
-  const avatarByTheme = {
-    cloud: cloudImg,
-    bear: bearImg,
-  };
-  const avatarSrc = avatarByTheme[currentTheme] || avatarByTheme.cloud;
 
   const canSave = useMemo(() => Object.keys(staged).length > 0, [staged]);
 
@@ -142,7 +134,7 @@ export default function MypageEdit() {
           style={{ borderRadius: "10px" }}
         >
           <img
-            src={avatarSrc}
+             src={themeConfig.profileImage} // ✅ 경로 하드코딩 제거
             alt="User Avatar"
             className="w-full h-full object-cover rounded-[10px] px-1 py-2"
           />
@@ -151,7 +143,7 @@ export default function MypageEdit() {
           className="text-lg font-bold"
           style={{ letterSpacing: "5px", display: "inline-block" }}
         >
-          {user?.uName || "사용자"}
+          {user?.uName || "차은우"}
         </h2>
       </div>
 

@@ -7,13 +7,7 @@ import { useTheme } from "../hooks/useTheme";
 
 export default function Mypage() {
   const { user, logout } = useAuth();
-  const { currentTheme } = useTheme();
-
-  const avatarByTheme = {
-    cloud: "src/assets/images/emotion/cloud.png",
-    bear: "src/assets/images/emotion/bear.png",
-  };
-  const avatarSrc = avatarByTheme[currentTheme] || avatarByTheme.cloud;
+  const { themeConfig } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -34,7 +28,7 @@ export default function Mypage() {
           style={{ borderRadius: "10px" }}
         >
           <img
-            src={avatarSrc}
+            src={themeConfig.profileImage}
             alt="User Avatar"
             className="w-full h-full object-cover rounded-[10px] px-1 py-2"
           />

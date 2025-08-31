@@ -262,6 +262,8 @@ export default function RecordDetail({ userId = "kosa1" }) {
                   onSeek={(r) => seek(sec, r)}
                   isActive={isActiveSection}
                   isPlaying={playing}
+                  currentMs={isActiveSection ? nowMs : 0}   // ⬅️ 추가
+  totalMs={sec.header.totalMs}              // ⬅️ 추가
                 />
                 {selectMode && (
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
