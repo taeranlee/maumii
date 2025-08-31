@@ -1,19 +1,12 @@
+// src/components/Layout.jsx
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import Navigation from "./Navigation.jsx"; // 경로 확인!
+import Navigation from "./Navigation.jsx";
 import { useApplyTheme } from "../useApplyTheme";
 
-// src/components/Layout.jsx
 export default function Layout() {
   useApplyTheme();
   const location = useLocation();
   const navigate = useNavigate();
-
-  // 경로 ↔ 탭 키 매핑 (원하는 대로 수정 가능)
-  const pathToKey = {
-    "/": "record",
-    "/record": "mic",
-    "/mypage": "mypage",
-  };
 
   const keyToPath = {
     record: "/record-list",
@@ -21,42 +14,34 @@ export default function Layout() {
     mypage: "/mypage",
   };
 
-  // 경로 → 탭 키 변환
   let active = "record";
+  if (location.pathname.startsWith("/mypage")) active = "mypage";
+  else if (location.pathname.startsWith("/record-list")) active = "record";
+  else if (location.pathname.startsWith("/record")) active = "mic";
 
-  if (location.pathname.startsWith("/mypage")) {
-    active = "mypage";
-  } else if (location.pathname.startsWith("/record-list")){
-    active = "record";
-  }else if (location.pathname.startsWith("/record")) {
-    active = "mic";
-  } 
-  const hideNav = ["/login", "/register", "/register/detail", "/"].includes(
-    location.pathname
-  ); // 로그인/회원가입에서 네비 숨김
+  const hideNav = ["/login", "/register", "/register/detail", "/"].includes(location.pathname);
 
   return (
     <div className="h-full md:grid md:place-items-center md:bg-slate-200">
-      {/* 모바일: 전체 화면 / 데스크톱: 390px 프레임 */}
+      {/* 폰 프레임 (md 이상에서만 적용) */}
       <div
         className="
           fixed inset-0 w-full h-[100svh] bg-white
           md:relative md:h-[780px] md:max-w-[390px]
           flex flex-col overflow-hidden
-          md:rounded-2xl md:shadow-2xl md:border md:border-slate-300
+          md:rounded-[32px] md:shadow-2xl md:border md:border-slate-300
         "
       >
+        {/* 데스크탑에서만 보이는 노치 */}
+        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-slate-300/30 rounded-b-2xl mt-1 z-20" />
+
         <main className="flex-1 min-h-0">
           <Outlet />
         </main>
 
-        {/* 프레임 내부 하단 고정 네비 */}
         {!hideNav && (
-          <div className="absolute inset-x-0 bottom-0 z-10 pb-[max(0px,env(safe-area-inset-bottom))]">
-            <Navigation
-              active={active}
-              onChange={(key) => navigate(keyToPath[key])}
-            />
+          <div className="absolute inset-x-0 bottom-0 z-10 pb-[max(0px,env(safe-area-inset-bottom))] bg-white/90 backdrop-blur border-t border-slate-200">
+            <Navigation active={active} onChange={(key) => navigate(keyToPath[key])} />
           </div>
         )}
       </div>
