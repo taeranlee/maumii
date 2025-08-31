@@ -64,7 +64,7 @@ const EMOTIONS = [
       "",
       "이럴 때는 진정시켜주는 말을 건네주세요!",
     ],
-    image: { cloud: img("cloud", "fear"), bear: img("bear", "fear") },
+    image: { cloud: img("cloud", "scared"), bear: img("bear", "scared") },
   },
   {
     id: 5,
