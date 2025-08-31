@@ -31,7 +31,7 @@ export default function MypageTheme() {
 
     // 변경사항이 없으면 저장하지 않음
     const currentTheme = user.uTheme || "cloud";
-    const currentExposure = user.uExposure ? "all" : "protector";
+    const currentExposure = user.uExposure ? "all" : "calm";
 
     if (currentTheme === theme && currentExposure === level) {
       alert("변경사항이 없습니다.");
