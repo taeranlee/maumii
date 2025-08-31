@@ -21,6 +21,13 @@ export const THEMES = {
   },
 };
 
+export const TOKENS = {
+  cloud: { partner: "#BDD6F3", mine: "#F8CBDE" },
+  bear: { partner: "#FAF2C7", mine: "#F8DCCB" },
+};
+export const getBubbleBg = (theme, me) =>
+  (TOKENS[theme] ?? TOKENS.cloud)[me ? "mine" : "partner"];
+
 export const getThemeConfig = (themeName) => {
   return THEMES[themeName] || THEMES.cloud;
 };

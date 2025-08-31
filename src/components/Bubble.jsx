@@ -1,48 +1,87 @@
-import { memo } from "react";
+// Bubble.jsx
+import React from "react";
 import { useTheme } from "../hooks/useTheme";
-import { getEmotionImg, defaultHeroByTheme } from "../utils/emotion";
+import { getEmotionImg } from "../utils/emotion";
+import { THEMES, getBubbleBg } from "../utils/themeUtils"; // ⬅️ getBubbleBg 가져오기
 
-// who: "me" | "partner"
-// text: 말풍선 텍스트
-// emotion: 감정 라벨 (예: "calm", "angry"...)
-// showHero: 감정 이미지 보일지 여부
-export default memo(function Bubble({
-  who = "me",
-  text = "",
-  emotion = null,
-  showHero = false,
-}) {
+function Bubble({ me = false, text = "", sub, isActive = false, emotion }) {
   const { currentTheme } = useTheme();
-  const HERO_IMG_CLASS = "w-48 h-48";
+
+  const avatar =
+    getEmotionImg(currentTheme, emotion) ||
+    THEMES[currentTheme]?.profileImage ||
+    THEMES.cloud.profileImage;
+
+  // ⬅️ 여기서 테마별 말풍선 배경색 뽑기
+  const bubbleBg = getBubbleBg(currentTheme, me);
 
   return (
-    <div>
-      {showHero && (
-        <div className="flex justify-center my-4">
+    <div className="mt-4 flex w-full">
+      {/* 상대(왼쪽) */}
+      {!me && (
+        <div className="ml-0 mr-auto flex items-end gap-3">
           <img
-            src={
-              emotion
-                ? getEmotionImg(currentTheme, emotion)
-                : defaultHeroByTheme[currentTheme]
-            }
-            alt={emotion || "hero"}
-            className={HERO_IMG_CLASS}
+            src={avatar}
+            alt={emotion || "avatar"}
+            className="h-16 w-16 shrink-0 object-cover"
+            draggable={false}
           />
+
+          <div className="max-w-[70%] text-left">
+            <div
+              className={[
+                "rounded-2xl px-4 py-3 whitespace-pre-wrap break-words leading-6 text-[14px] shadow",
+                "text-slate-800 rounded-bl-md",
+                isActive
+                  ? "shadow-[0_0_14px_rgba(126,104,255,0.6)] ring-1 ring-purple-400/40"
+                  : "",
+              ].join(" ")}
+              // ⬅️ 배경색을 토큰으로 주입
+              style={{ backgroundColor: bubbleBg }}
+            >
+              {text}
+            </div>
+            {sub && (
+              <div className="mt-1 text-xs text-slate-400 text-left">{sub}</div>
+            )}
+          </div>
         </div>
       )}
 
-      <div className={`flex ${who === "me" ? "justify-end" : "justify-start"}`}>
-        <div
-          className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap
-            ${
-              who === "me"
-                ? "bg-cloud-mine text-text-400 rounded-br-md"
-                : "bg-cloud-partner text-text-400 rounded-bl-md"
-            }`}
-        >
-          {text}
+      {/* 나(오른쪽) */}
+      {me && (
+        <div className="ml-auto mr-0 flex items-end gap-3">
+          <div className="max-w-[70%] text-right">
+            <div
+              className={[
+                "rounded-2xl px-4 py-3 whitespace-pre-wrap break-words leading-6 text-[14px] shadow",
+                "text-slate-800 rounded-br-md",
+                isActive
+                  ? "shadow-[0_0_14px_rgba(126,104,255,0.6)] ring-1 ring-purple-400/40"
+                  : "",
+              ].join(" ")}
+              // ⬅️ 배경색을 토큰으로 주입
+              style={{ backgroundColor: bubbleBg }}
+            >
+              {text}
+            </div>
+            {sub && (
+              <div className="mt-1 text-xs text-slate-400 text-right">
+                {sub}
+              </div>
+            )}
+          </div>
+
+          <img
+            src={avatar}
+            alt={emotion || "avatar"}
+            className="h-16 w-16 shrink-0 object-cover"
+            draggable={false}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
-});
+}
+
+export default Bubble;

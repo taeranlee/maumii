@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { FaBook } from "react-icons/fa";
 import { FaBoxArchive } from "react-icons/fa6";
+import RecordButton from "../components/RecordButton";
 
 /** 위/아래 세로 화살표 */
 function VerticalArrow({ dir = "down", className = "" }) {
@@ -56,11 +57,15 @@ export default function HelpScreen({ onClose }) {
           이모티콘이 어떤 감정인지 궁금하다면<br />
           감정 카드를 눌러서 확인해보세요!
         </div>
-        <div className="mx-auto mt-9 w-20 h-20 rounded-full bg-white border-4 border-cloud-partner flex items-center justify-center">
+        {/* <div className="mx-auto mt-9 w-20 h-20 rounded-full bg-white border-4 border-cloud-partner flex items-center justify-center">
                 <span className="w-12 h-12">
                     <img src="src/assets/images/구르미.svg"></img>
                 </span>
-            </div>
+            </div> */}
+            <RecordButton
+                    role="partner"
+                    className="absolute left-1/2 -translate-x-1/2 top-[85px] h-20 w-20 text-notice"
+            />
 
         {/* 1-1) 상단 작은 원(카드) 위치로 향하는 '위쪽' 세로 화살표 */}
         {/* 작은 원이 화면 상단 중앙 부근에 있다고 가정하여 중앙 조금 아래에서 위로 향하게 배치 */}
@@ -81,11 +86,15 @@ export default function HelpScreen({ onClose }) {
             </div>
 
         {/* 내 버튼 */}
-        <div className="cursor-pointer m-auto mt-8 w-20 h-20 rounded-full bg-white border-4 border-cloud-mine flex items-center justify-center">
+            <RecordButton
+                role="me"
+                className="absolute left-1/2 -translate-x-1/2 bottom-[185px] md:bottom-38 h-20 w-20 text-notice"
+            />
+        {/* <div className="cursor-pointer m-auto mt-8 w-20 h-20 rounded-full bg-white border-4 border-cloud-mine flex items-center justify-center">
           <span className="w-12 h-12">
             <img src="src/assets/images/구르미.svg" />
           </span>
-        </div>
+        </div> */}
         {/* 3) 하단 안내문 (탭바 “기록” 방향) */}
         <div className="absolute left-16 bottom-[120px] md:bottom-38 font-semibold text-[16px]">
           녹음한 대화 기록을 확인할 수 있어요
