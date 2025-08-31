@@ -56,7 +56,7 @@ const EMOTIONS = [
   },
   {
     id: 4,
-    key: "fear",
+    key: "scared",
     name: "무서움",
     description: [
       "이 표정은 상대방, 혹은 내가",

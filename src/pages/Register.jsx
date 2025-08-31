@@ -126,12 +126,12 @@ export default function Register() {
     return (
         <form
             onSubmit={handleSubmit}
-            className="overflow-y-auto h-full bg-white"
+            className="flex flex-col h-full bg-white"
         >
-            <div className="m-16">
+            <div className="shrink-0 m-16">
                 <Title variant="auth">회원가입</Title>
             </div>
-            <div className="mx-auto w-full max-w-[330px] px-6 pb-24 space-y-3">
+            <div className="flex-1 overflow-y-auto mx-auto w-full max-w-[330px] px-6 pb-12 space-y-3">
                 <Input
                     label="이름"
                     placeholder="이름을 입력해 주세요"
@@ -169,8 +169,6 @@ export default function Register() {
                         {message}
                     </p>
                 )}
-
-
 
                 <Input
                     label="비밀번호"
@@ -227,7 +225,8 @@ export default function Register() {
                         </Button>
                     </div>
                 </Collapse>
-
+            </div>
+            <div className="mx-auto w-full max-w-[330px] px-6 pb-20 space-y-3">
                 <div className="pt-2 space-y-1">
                     <Button full type="submit">
                         다음
@@ -238,6 +237,5 @@ export default function Register() {
                 </div>
             </div>
         </form>
-
     );
 }
