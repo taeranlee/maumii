@@ -425,8 +425,8 @@ export default function Record() {
           className="text-white h-5 w-5"
           onClick={() => setShowEmotion(true)}
         />
-        <div className="text-sm text-white/80">
-          WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}
+        <div className="text-base text-white font-semibold">
+          {isRecording ? "▶ 녹음중..." : "⏸ 녹음중지"}
         </div>
         <FiHelpCircle
           className="text-white h-6 w-6"
