@@ -23,8 +23,8 @@ const EMOTIONS = [
       "이럴 때는 상대의 말에 귀 기울여 주세요!",
     ],
     image: {
-      cloud: "src/assets/images/emotion/cloud_calm.png",
-      bear: "src/assets/images/emotion/bear_calm.png",
+      cloud: "src/assets/images/emotion/cloud.png",
+      bear: "src/assets/images/emotion/bear.png",
     },
   },
   {

@@ -1,3 +1,5 @@
+import { useAuth } from "../context/AuthContext";
+
 const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
   eager: true,
   import: "default",
