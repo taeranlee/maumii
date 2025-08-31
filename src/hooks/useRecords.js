@@ -11,8 +11,8 @@ export function useRecords(rlId, userId) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(()=>{
-    (async ()=>{
+  useEffect(() => {
+    (async () => {
       setLoading(true);
       setError(null);
       try {
@@ -21,14 +21,14 @@ export function useRecords(rlId, userId) {
           setTitle(data[0].rlName || "대화 기록");
         }
 
-        const mapped = (Array.isArray(data) ? data : []).map((rec)=> {
+        const mapped = (Array.isArray(data) ? data : []).map((rec) => {
           const totalMs =
             typeof rec.rLength === "string"
               ? toMsFromLocalTime(rec.rLength)
               : (rec.totalMs ?? 0);
 
           let cursorMs = 0;
-          const talks = (rec.bubbles || []).map((b, idx)=>{
+          const talks = (rec.bubbles || []).map((b, idx) => {
             const lenMs =
               b?.durationMs ??
               (typeof b?.bLength === "string" ? toMsFromLocalTime(b.bLength) : 0);
@@ -46,20 +46,22 @@ export function useRecords(rlId, userId) {
             return talk;
           });
 
+        
           return {
             id: `rec-${rec.rId}`,
             rId: rec.rId,
             rVoice: absUrl(rec.rVoice || ""),
             header: {
               dateLabel: fmtDateLabel(rec.rCreatedAt),
-              duration: fmtDurationKorean(totalMs),
+              duration: fmtDurationKorean(totalMs), // 기존 라벨 유지(백업용)
+              totalMs,                              // ⬅️ 추가: 숫자(ms)
             },
             talks,
           };
         });
 
         setSections(mapped);
-      } catch(e) {
+      } catch (e) {
         setError(String(e?.message || e));
         setSections([]);
       } finally {

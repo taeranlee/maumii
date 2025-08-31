@@ -47,3 +47,12 @@ export const fmtStartLabel = (ms) => {
   const s = sec % 60;
   return m >= 1 ? `${m}분 ${s}초` : `${(ms/1000).toFixed(1)}초`;
 };
+
+export const fmtClock = (ms) => {
+  const sec = Math.max(0, Math.floor((ms || 0) / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m <= 0) return `${s}초`;
+  const pad2 = (n) => String(n).padStart(2, "0");
+  return `${pad2(m)}분 ${pad2(s)}초`;
+};
