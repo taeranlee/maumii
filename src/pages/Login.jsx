@@ -75,8 +75,7 @@ export default function Login() {
           </Button>
           <div className="text-end text-sm text-slate-400">회원가입</div>
         </div>
-
-        {/* --- 옵션: 소셜 로그인 섹션 --- */}
+{/*  옵션: 소셜 로그인 섹션
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-200" />
@@ -106,7 +105,7 @@ export default function Login() {
         </Button>
         <Button full variant="outline" onClick={() => alert("Google 로그인")}>
           Google로 로그인
-        </Button>
+        </Button> */}
       </div>
     </form>
   );
