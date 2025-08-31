@@ -6,6 +6,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
 import Bubble from "../components/Bubble";
+import EMOTIONS from "../data/Emotion.js";
 import { createPortal } from "react-dom";
 import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useRecords } from "../hooks/useRecords.js";
@@ -65,6 +66,16 @@ export default function RecordDetail() {
       alert("녹음 리스트 제목 수정에 실패했습니다.");
     }
   };
+
+  const emotions = [
+    { key: "happy", img: "src/assets/images/emotion/cloud_happy.png" },
+    { key: "sad", img: "/emotions/sad.png" },
+    { key: "angry", img: "/emotions/angry.png" },
+    { key: "neutral", img: "/emotions/neutral.png" },
+    { key: "surprised", img: "/emotions/surprised.png" },
+    { key: "fear", img: "/emotions/fear.png" },
+    { key: "disgust", img: "/emotions/disgust.png" },
+  ];
 
   // 말풍선 편집 시트
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -264,8 +275,8 @@ export default function RecordDetail() {
                   onSeek={(r) => seek(sec, r)}
                   isActive={isActiveSection}
                   isPlaying={playing}
-                  currentMs={isActiveSection ? nowMs : 0}   // ⬅️ 추가
-  totalMs={sec.header.totalMs}              // ⬅️ 추가
+                  currentMs={isActiveSection ? nowMs : 0}   // 추가
+                  totalMs={sec.header.totalMs}              // 추가
                 />
                 {selectMode && (
                   <label className="absolute right-1 top-2 flex items-center gap-2 cursor-pointer select-none">
@@ -334,10 +345,28 @@ export default function RecordDetail() {
               style={{ bottom: `calc(${TABBAR_H}px)` }}
             >
               <div className="pointer-events-auto w-full rounded-b-2xl rounded-t-[40px] bg-white shadow-xl">
-                <div className="text-lg font-semibold mb-3 mt-3 py-6 text-center">
+                <div className="text-lg font-semibold mb-3 mt-3 pt-6 pb-2 text-center">
                   녹음 내용 수정하기
                 </div>
-
+                <div className="flex justify-center mt-4 px-4 pb-6">
+                    {EMOTIONS.map((em) => {
+                      const selected = editingTalk?.emotion === em.name; // 현재 선택된 감정과 비교
+                      return (
+                        <div
+                          key={em.id}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer
+                            transition-all duration-200 transition-transfrom
+                            ${selected ? "shadow-[0_0_8px_rgba(126,104,255,0.7)] scale-110" : "ring-0 scale-100"}
+                          `}
+                          onClick={() =>
+                            setEditingTalk(prev => prev ? { ...prev, emotion: em.name } : prev)
+                          }
+                        >
+                          <img src={`src/assets/images/emotion/cloud_${em.id}.png`} alt={em.name} className="w-8 h-8" />
+                        </div>
+                      );
+                    })}
+                </div>
                 <div className="px-4 pb-4">
                   <textarea
                     className="w-full min-h-[140px] rounded-xl border border-slate-200 p-3 outline-none"
@@ -348,7 +377,7 @@ export default function RecordDetail() {
                       )
                     }
                   />
-                  <div className="flex justify-end gap-2 mt-3">
+                  <div className="flex justify-between gap-2 mt-3">
                     <button
                       className="px-4 py-2 rounded-xl border border-slate-300"
                       onClick={() => {

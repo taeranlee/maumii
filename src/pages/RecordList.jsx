@@ -23,7 +23,7 @@ export function formatKoreanDateTime(dateString) {
   });
 }
 
-export default function RecordList({uId="codus1214"}) { // react state 에서 uId 값 가져오기
+export default function RecordList({uId="kosa1"}) { // react state 에서 uId 값 가져오기
   const navigate = useNavigate();
   // 녹음 리스트 (API 연동)
   const [recordList, setRecordList] = useState([]); // 화면에 보여줄 리스트
