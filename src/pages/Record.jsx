@@ -38,6 +38,8 @@ export default function Record() {
   const [emotion, setEmotion] = useState("calm");
   const [showSave, setShowSave] = useState(false);
   const [recordLists, setRecordLists] = useState([]);
+  const [angryStreak, setAngryStreak] = useState(0);
+  const [showAngryBanner, setShowAngryBanner] = useState(false);
 
   const [partialText, setPartialText] = useState("");
   const [chat, setChat] = useState([]); // 화면에는 항상 최신 1개만 보여줌
@@ -68,6 +70,10 @@ export default function Record() {
 
   const scrollToBottom = () => listEndRef.current?.scrollIntoView({ behavior: "smooth" });
   const HERO_IMG_CLASS = "w-48 h-48";
+  const isAngry = (em) => {
+    const v = String(em || "").toLowerCase();
+    return ["angry"].includes(v);
+  };
 
   const pickMime = () => {
     const c = ["audio/ogg;codecs=opus", "audio/webm;codecs=opus", "audio/ogg", "audio/webm"];
@@ -217,6 +223,20 @@ export default function Record() {
       setEmotion(label);
     } catch (err) { console.error("❌ 서버 전송 실패:", err); }
   };
+  useEffect(() => {
+    if (!emotion) return;
+
+    setAngryStreak((prev) => (isAngry(emotion) ? prev + 1 : 0));
+  }, [emotion]);
+
+  useEffect(() => {
+    if (angryStreak >= 1) {
+      setShowAngryBanner(true);
+      // 자동 닫기 원하면 10초 뒤 닫기
+      // const t = setTimeout(() => setShowAngryBanner(false), 10000);
+      // return () => clearTimeout(t);
+    }
+  }, [angryStreak]);
 
   /** ---------- 저장/취소 ---------- */
   const cancelSession = () => {
@@ -224,63 +244,67 @@ export default function Record() {
     setChat([]);
     setHeroId(null);
     setSessionBubbles([]);
+    setAngryStreak(0);        // ← 추가
+    setShowAngryBanner(false);// ← 추가
   };
 
   // 실제 저장용 FormData 구성 (메타 + 파일들)
   const buildFormData = ({ recordListId, recordListTitle }) => {
     const meta = sessionBubbles.map((b, i) => ({
-    // ✅ 백엔드가 요구하는 필드들
-    bTalker: b.speaker || "me",                // boolean 으로 변환
-   bText: b.text,
-   bEmotion: ((b.emotion || emotion || "calm")), // Enum 매핑 대비
-    bLength: null,                               // 길이는 서버에서 durationMs로 보정
-    durationMs: b.durationMs,
+      // ✅ 백엔드가 요구하는 필드들
+      bTalker: b.speaker || "me",                // boolean 으로 변환
+      bText: b.text,
+      bEmotion: ((b.emotion || emotion || "calm")), // Enum 매핑 대비
+      bLength: null,                               // 길이는 서버에서 durationMs로 보정
+      durationMs: b.durationMs,
 
-    // (참고) 디버깅/추적용으로 기존 값들도 같이 보낼 수 있다면:
-    id: b.id,
-    startedAt: b.startedAt,
-    endedAt: b.endedAt,
+      // (참고) 디버깅/추적용으로 기존 값들도 같이 보낼 수 있다면:
+      id: b.id,
+      startedAt: b.startedAt,
+      endedAt: b.endedAt,
 
-    // 버블 오디오 파일 필드명
-    fileField: `audio_${i}`,
-  }));
+      // 버블 오디오 파일 필드명
+      fileField: `audio_${i}`,
+    }));
     const form = new FormData();
     form.append("record", new Blob([JSON.stringify({
-   voiceField: null,                    // 세션 통짜 오디오 쓸 거면 필드명 넣기
-   record: {                            // ✅ 반드시 포함
-     rlId: recordListId ?? null,
-     rLength: null,
-     rVoice: null
-   },
-   bubbles: meta,                       // meta에 fileField: "audio_i", durationMs 포함
-  recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
-   userId: "current-user-id"            // (선택) 서버에서 SecurityContext 쓰면 생략 가능
- })], { type: "application/json" }))
+      voiceField: null,                    // 세션 통짜 오디오 쓸 거면 필드명 넣기
+      record: {                            // ✅ 반드시 포함
+        rlId: recordListId ?? null,
+        rLength: null,
+        rVoice: null
+      },
+      bubbles: meta,                       // meta에 fileField: "audio_i", durationMs 포함
+      recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
+      userId: "current-user-id"            // (선택) 서버에서 SecurityContext 쓰면 생략 가능
+    })], { type: "application/json" }))
     sessionBubbles.forEach((b, i) => form.append(`audio_${i}`, b.audioBlob, `utt_${i}.ogg`));
-    
+
     return form;
   };
 
-const saveSession = async ({ recordListId, recordListTitle }) => {
-  if (sessionBubbles.length === 0) return;
-  try {
-    const form = buildFormData({ recordListId, recordListTitle });
+  const saveSession = async ({ recordListId, recordListTitle }) => {
+    if (sessionBubbles.length === 0) return;
+    try {
+      const form = buildFormData({ recordListId, recordListTitle });
 
-    // ✅ 여기서 디버깅!
-    await debugForm(form);
+      // ✅ 여기서 디버깅!
+      await debugForm(form);
 
-    const data = await RecordsAPI.saveRecord(form);
-    console.log("✅ 저장 완료:", data);
+      const data = await RecordsAPI.saveRecord(form);
+      console.log("✅ 저장 완료:", data);
 
-    setChat([]); 
-    setHeroId(null); 
-    setSessionBubbles([]); 
-    setEmotion("calm");
-    setShowSave(false);
-  } catch (e) { 
-    console.error("❌ 저장 실패:", e); 
-  }
-};
+      setChat([]);
+      setHeroId(null);
+      setSessionBubbles([]);
+      setEmotion("calm");
+      setShowSave(false);
+      setAngryStreak(0);          // ← 추가
+      setShowAngryBanner(false);  // ← 추가
+    } catch (e) {
+      console.error("❌ 저장 실패:", e);
+    }
+  };
 
   /** ---------- UI handlers ---------- */
   const onPartnerClick = async () => { if (!isRecording) await startRecording("partner"); else stopRecording(); };
@@ -307,6 +331,46 @@ const saveSession = async ({ recordListId, recordListTitle }) => {
         <div className="text-sm text-white/80">WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}</div>
         <FiHelpCircle className="text-white h-6 w-6" onClick={() => setShowHelp(true)} />
       </div>
+      {/* 🔴 화남 3연속 감지 배너 */}
+      {showAngryBanner && (
+        <div className="fixed top-16 left-0 right-0 z-50 w-full">
+          <div className="mx-4 mt-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 p-3 shadow">
+            <div className="flex items-start gap-3">
+              <div className="font-semibold">긴장 신호 감지</div>
+              <button
+                className="ml-auto text-red-500 hover:opacity-70"
+                onClick={() => setShowAngryBanner(false)}
+                aria-label="닫기"
+              >
+                닫기
+              </button>
+            </div>
+            <p className="text-sm mt-1">
+              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요. 잠깐 호흡하고 대화를 천천히 이어가볼까요?
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                className="px-3 py-1 rounded-lg bg-red-600 text-white"
+                onClick={() => {
+                  // 예: 도움말/호흡 가이드 열기
+                  setShowHelp(true);
+                }}
+              >
+                호흡 가이드
+              </button>
+              <button
+                className="px-3 py-1 rounded-lg border border-red-300"
+                onClick={() => {
+                  setShowAngryBanner(false);
+                  setAngryStreak(0);
+                }}
+              >
+                괜찮아요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 상단: 상대 버튼 */}
       <div
