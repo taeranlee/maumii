@@ -8,6 +8,7 @@ import { RecordsAPI } from "../api/records.js";
 import { getEmotionImg, defaultHeroByTheme } from "../utils/emotion";
 import { useTheme } from "../hooks/useTheme";
 import RecordButton from "../components/RecordButton";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const debugForm = async (form) => {
   // ⚠️ 훅 사용 금지(컴포넌트 외부)
@@ -27,6 +28,8 @@ const debugForm = async (form) => {
 };
 
 export default function Record() {
+  const user = useAuth();
+  const userId = user?.uId;
   const { currentTheme } = useTheme(); // ✅ 컴포넌트 내부에서 훅 호출
 
   const [sessionBubbles, setSessionBubbles] = useState([]); // ✅ 세션 버퍼
@@ -68,7 +71,7 @@ export default function Record() {
     if (!showSave) return;
     (async () => {
       try {
-        const data = await RecordsAPI.getRecordNames("kosa");
+        const data = await RecordsAPI.getRecordNames(userId);
         setRecordLists(Array.isArray(data) ? data : []);
       } catch {
         setRecordLists([]);
@@ -352,7 +355,7 @@ export default function Record() {
             },
             bubbles: meta, // meta에 fileField: "audio_i", durationMs 포함
             recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
-            userId: "current-user-id", // (선택) 서버에서 SecurityContext 쓰면 생략 가능
+            userId: userId, // (선택) 서버에서 SecurityContext 쓰면 생략 가능
           }),
         ],
         { type: "application/json" }
