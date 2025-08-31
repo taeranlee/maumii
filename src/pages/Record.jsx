@@ -5,15 +5,17 @@ import HelpScreen from "./HelpScreen";
 import EmotionCard from "./EmotionCard";
 import SaveDialog from "../components/SaveModal";
 import { RecordsAPI } from "../api/records.js";
-import { getEmotionImg, defaultHero } from "../utils/emotion";
-
+import { getEmotionImg, defaultHeroByTheme } from "../utils/emotion";
+import { useTheme } from "../hooks/useTheme";
+import RecordButton from "../components/RecordButton";
 
 const debugForm = async (form) => {
-  const blob = form.get("record");  // Blob(application/json)
+  // ⚠️ 훅 사용 금지(컴포넌트 외부)
+  const blob = form.get("record"); // Blob(application/json)
   console.log("record blob:", blob);
 
   if (blob) {
-    const txt = await blob.text();  // Blob → 문자열
+    const txt = await blob.text(); // Blob → 문자열
     console.log("record JSON =>", txt);
 
     try {
@@ -25,6 +27,8 @@ const debugForm = async (form) => {
 };
 
 export default function Record() {
+  const { currentTheme } = useTheme(); // ✅ 컴포넌트 내부에서 훅 호출
+
   const [sessionBubbles, setSessionBubbles] = useState([]); // ✅ 세션 버퍼
   const [heroId, setHeroId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -43,15 +47,19 @@ export default function Record() {
 
   const [partialText, setPartialText] = useState("");
   const [chat, setChat] = useState([]); // 화면에는 항상 최신 1개만 보여줌
-  const [composing, setComposing] = useState({ active: false, who: null, text: "" });
+  const [composing, setComposing] = useState({
+    active: false,
+    who: null,
+    text: "",
+  });
 
   const wsRef = useRef(null);
   const mediaRecRef = useRef(null);
   const streamRef = useRef(null);
   const listEndRef = useRef(null);
 
-  const currentChunksRef = useRef([]);     // ✅ 이번 발화의 오디오 청크들
-  const utterStartRef = useRef(null);      // ✅ 발화 시작시간
+  const currentChunksRef = useRef([]); // ✅ 이번 발화의 오디오 청크들
+  const utterStartRef = useRef(null); // ✅ 발화 시작시간
 
   const WS_URL =
     "ws://localhost:9000/ws/stt?encoding=OGG_OPUS&sample_rate=16000&use_itn=true&model_name=sommers_ko&domain=CALL";
@@ -68,7 +76,8 @@ export default function Record() {
     })();
   }, [showSave]);
 
-  const scrollToBottom = () => listEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = () =>
+    listEndRef.current?.scrollIntoView({ behavior: "smooth" });
   const HERO_IMG_CLASS = "w-48 h-48";
   const isAngry = (em) => {
     const v = String(em || "").toLowerCase();
@@ -76,8 +85,14 @@ export default function Record() {
   };
 
   const pickMime = () => {
-    const c = ["audio/ogg;codecs=opus", "audio/webm;codecs=opus", "audio/ogg", "audio/webm"];
-    for (const m of c) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+    const c = [
+      "audio/ogg;codecs=opus",
+      "audio/webm;codecs=opus",
+      "audio/ogg",
+      "audio/webm",
+    ];
+    for (const m of c)
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
     return "";
   };
 
@@ -86,11 +101,19 @@ export default function Record() {
     try {
       const msg = JSON.parse(raw);
       const alt = Array.isArray(msg.alternatives) ? msg.alternatives[0] : null;
-      const text = (alt?.transcript || alt?.text || msg.transcript || msg.text || "").trim();
+      const text = (
+        alt?.transcript ||
+        alt?.text ||
+        msg.transcript ||
+        msg.text ||
+        ""
+      ).trim();
       const isFinal = msg.final === true || msg.type === "final";
       const isPartial = msg.type === "partial" || (!isFinal && !!text);
       return { isFinal, isPartial, text };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   };
 
   /** ---------- WebSocket ---------- */
@@ -102,7 +125,11 @@ export default function Record() {
       }
       const ws = new WebSocket(WS_URL);
       ws.binaryType = "arraybuffer";
-      ws.onopen = () => { setConnected(true); wsRef.current = ws; resolve(); };
+      ws.onopen = () => {
+        setConnected(true);
+        wsRef.current = ws;
+        resolve();
+      };
       ws.onmessage = (e) => {
         const parsed = parseStt(e.data);
         if (!parsed) return;
@@ -122,12 +149,23 @@ export default function Record() {
           return;
         }
       };
-      ws.onclose = () => { setConnected(false); wsRef.current = null; };
-      ws.onerror = (err) => { console.error("[WS] error", err); reject(err); };
+      ws.onclose = () => {
+        setConnected(false);
+        wsRef.current = null;
+      };
+      ws.onerror = (err) => {
+        console.error("[WS] error", err);
+        reject(err);
+      };
     });
 
   const disconnectWS = () => {
-    if (wsRef.current) { try { wsRef.current.close(1000, "user-toggle"); } catch { } wsRef.current = null; }
+    if (wsRef.current) {
+      try {
+        wsRef.current.close(1000, "user-toggle");
+      } catch {}
+      wsRef.current = null;
+    }
     setConnected(false);
   };
 
@@ -135,8 +173,8 @@ export default function Record() {
   const startRecording = async (who) => {
     // 이번 발화 준비
     currentChunksRef.current = [];
-    utterStartRef.current = Date.now();      // ✅ 시작시간
-    setChat([]);                             // 이전 발화 제거
+    utterStartRef.current = Date.now(); // ✅ 시작시간
+    setChat([]); // 이전 발화 제거
     setHeroId(null);
     setComposing({ active: true, who, text: "" });
     setPartialText("");
@@ -150,14 +188,26 @@ export default function Record() {
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { channelCount: 1, sampleRate: 16000, noiseSuppression: true, echoCancellation: true, autoGainControl: true },
+      audio: {
+        channelCount: 1,
+        sampleRate: 16000,
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true,
+      },
     });
     streamRef.current = stream;
 
     const mime = pickMime();
-    if (!mime) { alert("브라우저가 OGG/WEBM OPUS 녹음을 지원하지 않습니다."); return; }
+    if (!mime) {
+      alert("브라우저가 OGG/WEBM OPUS 녹음을 지원하지 않습니다.");
+      return;
+    }
 
-    const rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 64000 });
+    const rec = new MediaRecorder(stream, {
+      mimeType: mime,
+      audioBitsPerSecond: 64000,
+    });
     mediaRecRef.current = rec;
 
     rec.ondataavailable = async (ev) => {
@@ -174,21 +224,34 @@ export default function Record() {
 
   const stopRecording = () => {
     setIsRecording(false);
-    try { wsRef.current?.send("EOS"); } catch { }
-    try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch { }
+    try {
+      wsRef.current?.send("EOS");
+    } catch {}
+    try {
+      if (mediaRecRef.current && mediaRecRef.current.state !== "inactive")
+        mediaRecRef.current.stop();
+    } catch {}
     mediaRecRef.current = null;
-    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
 
     setComposing((prev) => {
       if (prev.active && !commitLockRef.current) {
-        const finalText = ((prev.text || "") + (partialText ? (prev.text ? " " : "") + partialText : "")).trim();
+        const finalText = (
+          (prev.text || "") +
+          (partialText ? (prev.text ? " " : "") + partialText : "")
+        ).trim();
         if (finalText) {
           const newId = Date.now() + Math.random();
           setChat([{ id: newId, who: prev.who || "me", text: finalText }]);
           setHeroId(newId);
 
           // ✅ 이번 발화의 오디오 Blob/메타를 세션 버퍼에 저장
-          const audioBlob = new Blob(currentChunksRef.current, { type: "audio/ogg;codecs=opus" });
+          const audioBlob = new Blob(currentChunksRef.current, {
+            type: "audio/ogg;codecs=opus",
+          });
           const endedAt = Date.now();
           const bubbleForSession = {
             id: newId,
@@ -196,9 +259,12 @@ export default function Record() {
             text: finalText,
             startedAt: utterStartRef.current,
             endedAt,
-            durationMs: Math.max(0, endedAt - (utterStartRef.current || endedAt)),
+            durationMs: Math.max(
+              0,
+              endedAt - (utterStartRef.current || endedAt)
+            ),
             audioBlob, // 🔴 파일
-            emotion: (emotion || "calm"),
+            emotion: emotion || "calm",
           };
           setSessionBubbles((old) => [...old, bubbleForSession]);
 
@@ -217,11 +283,16 @@ export default function Record() {
   const sendToServer = async (who, text) => {
     console.log("📤 서버 전송 시도:", { speaker: who, content: text });
     try {
-      const data = await RecordsAPI.sendTextForEmotion({ speaker: who, content: text });
+      const data = await RecordsAPI.sendTextForEmotion({
+        speaker: who,
+        content: text,
+      });
       console.log("✅ 서버 응답:", data);
       const label = data?.label;
       setEmotion(label);
-    } catch (err) { console.error("❌ 서버 전송 실패:", err); }
+    } catch (err) {
+      console.error("❌ 서버 전송 실패:", err);
+    }
   };
   useEffect(() => {
     if (!emotion) return;
@@ -244,18 +315,18 @@ export default function Record() {
     setChat([]);
     setHeroId(null);
     setSessionBubbles([]);
-    setAngryStreak(0);        // ← 추가
-    setShowAngryBanner(false);// ← 추가
+    setAngryStreak(0); // ← 추가
+    setShowAngryBanner(false); // ← 추가
   };
 
   // 실제 저장용 FormData 구성 (메타 + 파일들)
   const buildFormData = ({ recordListId, recordListTitle }) => {
     const meta = sessionBubbles.map((b, i) => ({
       // ✅ 백엔드가 요구하는 필드들
-      bTalker: b.speaker || "me",                // boolean 으로 변환
+      bTalker: b.speaker || "me", // boolean 으로 변환
       bText: b.text,
-      bEmotion: ((b.emotion || emotion || "calm")), // Enum 매핑 대비
-      bLength: null,                               // 길이는 서버에서 durationMs로 보정
+      bEmotion: b.emotion || emotion || "calm", // Enum 매핑 대비
+      bLength: null, // 길이는 서버에서 durationMs로 보정
       durationMs: b.durationMs,
 
       // (참고) 디버깅/추적용으로 기존 값들도 같이 보낼 수 있다면:
@@ -267,18 +338,29 @@ export default function Record() {
       fileField: `audio_${i}`,
     }));
     const form = new FormData();
-    form.append("record", new Blob([JSON.stringify({
-      voiceField: null,                    // 세션 통짜 오디오 쓸 거면 필드명 넣기
-      record: {                            // ✅ 반드시 포함
-        rlId: recordListId ?? null,
-        rLength: null,
-        rVoice: null
-      },
-      bubbles: meta,                       // meta에 fileField: "audio_i", durationMs 포함
-      recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
-      userId: "current-user-id"            // (선택) 서버에서 SecurityContext 쓰면 생략 가능
-    })], { type: "application/json" }))
-    sessionBubbles.forEach((b, i) => form.append(`audio_${i}`, b.audioBlob, `utt_${i}.ogg`));
+    form.append(
+      "record",
+      new Blob(
+        [
+          JSON.stringify({
+            voiceField: null, // 세션 통짜 오디오 쓸 거면 필드명 넣기
+            record: {
+              // ✅ 반드시 포함
+              rlId: recordListId ?? null,
+              rLength: null,
+              rVoice: null,
+            },
+            bubbles: meta, // meta에 fileField: "audio_i", durationMs 포함
+            recordListTitle: recordListTitle || null, // ← 없으면 null                    // 새 리스트 생성 시 제목
+            userId: "current-user-id", // (선택) 서버에서 SecurityContext 쓰면 생략 가능
+          }),
+        ],
+        { type: "application/json" }
+      )
+    );
+    sessionBubbles.forEach((b, i) =>
+      form.append(`audio_${i}`, b.audioBlob, `utt_${i}.ogg`)
+    );
 
     return form;
   };
@@ -299,37 +381,54 @@ export default function Record() {
       setSessionBubbles([]);
       setEmotion("calm");
       setShowSave(false);
-      setAngryStreak(0);          // ← 추가
-      setShowAngryBanner(false);  // ← 추가
+      setAngryStreak(0); // ← 추가
+      setShowAngryBanner(false); // ← 추가
     } catch (e) {
       console.error("❌ 저장 실패:", e);
     }
   };
 
   /** ---------- UI handlers ---------- */
-  const onPartnerClick = async () => { if (!isRecording) await startRecording("partner"); else stopRecording(); };
-  const onMeClick = async () => { if (!isRecording) await startRecording("me"); else stopRecording(); };
+  const onPartnerClick = async () => {
+    if (!isRecording) await startRecording("partner");
+    else stopRecording();
+  };
+  const onMeClick = async () => {
+    if (!isRecording) await startRecording("me");
+    else stopRecording();
+  };
 
   /** ---------- lifecycle ---------- */
   useEffect(() => {
     return () => {
-      try { mediaRecRef.current?.stop(); } catch { }
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+      try {
+        mediaRecRef.current?.stop();
+      } catch {}
+      if (streamRef.current)
+        streamRef.current.getTracks().forEach((t) => t.stop());
       disconnectWS();
     };
   }, []);
-  useEffect(() => { roleRef.current = role; }, [role]);
+  useEffect(() => {
+    roleRef.current = role;
+  }, [role]);
 
   /** ---------- render ---------- */
   return (
     <div className="h-full bg-text-200 flex flex-col relative">
       {/* 헤더 */}
       <div className="flex justify-between items-center p-8">
-        <FaBook className="text-white h-5 w-5"
+        <FaBook
+          className="text-white h-5 w-5"
           onClick={() => setShowEmotion(true)}
         />
-        <div className="text-sm text-white/80">WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}</div>
-        <FiHelpCircle className="text-white h-6 w-6" onClick={() => setShowHelp(true)} />
+        <div className="text-sm text-white/80">
+          WS: {connected ? "🟢" : "🔴"} / REC: {isRecording ? "🟣" : "⚪"}
+        </div>
+        <FiHelpCircle
+          className="text-white h-6 w-6"
+          onClick={() => setShowHelp(true)}
+        />
       </div>
       {/* 🔴 화남 3연속 감지 배너 */}
       {showAngryBanner && (
@@ -346,7 +445,8 @@ export default function Record() {
               </button>
             </div>
             <p className="text-sm mt-1">
-              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요. 잠깐 호흡하고 대화를 천천히 이어가볼까요?
+              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요. 잠깐
+              호흡하고 대화를 천천히 이어가볼까요?
             </p>
             <div className="flex gap-2 mt-2">
               <button
@@ -373,36 +473,68 @@ export default function Record() {
       )}
 
       {/* 상단: 상대 버튼 */}
-      <div
+      {/* <div
         onClick={onPartnerClick}
         className={`cursor-pointer mx-auto w-20 h-20 rounded-full bg-white border-4 flex items-center justify-center 
-          ${isRecording && role === "partner" ? "border-cloud-parter" : "border-cloud-partner"}`}
-        title={isRecording && role === "partner" ? "녹음 종료" : "상대방 녹음 시작"}
+          ${
+            isRecording && role === "partner"
+              ? "border-cloud-parter"
+              : "border-cloud-partner"
+          }`}
+        title={
+          isRecording && role === "partner" ? "녹음 종료" : "상대방 녹음 시작"
+        }
       >
         <span className="w-12 h-12">
           <img src="src/assets/images/구르미.svg" />
         </span>
-      </div>
+      </div> */}
+      <RecordButton
+        role="partner"
+        isRecording={isRecording}
+        activeRole={role}
+        onClick={onPartnerClick}
+        title={
+          isRecording && role === "partner" ? "녹음 종료" : "상대방 녹음 시작"
+        }
+        className="mx-auto"
+      />
 
       {/* 중앙: 실시간/채팅 */}
       <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
           {!isRecording && chat.length === 0 && (
             <div className="flex justify-center md:my-20 my-[30px]">
-              <img src={defaultHero} alt="calm" className={HERO_IMG_CLASS} />
+              <img
+                src={defaultHeroByTheme[currentTheme]}
+                alt="calm"
+                className={HERO_IMG_CLASS}
+              />
             </div>
           )}
           {chat.map((m) => (
             <div key={m.id}>
               {m.id === heroId && (
                 <div className="flex justify-center my-4">
-                  <img src={getEmotionImg(emotion)} alt={emotion || "hero"} className={HERO_IMG_CLASS} />
+                  <img
+                    src={getEmotionImg(currentTheme, emotion)}
+                    alt={emotion || "hero"}
+                    className={HERO_IMG_CLASS}
+                  />
                 </div>
               )}
-              <div className={`flex ${m.who === "me" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`flex ${
+                  m.who === "me" ? "justify-end" : "justify-start"
+                }`}
+              >
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap
-                    ${m.who === "me" ? "bg-cloud-mine text-text-400 rounded-br-md" : "bg-cloud-partner text-text-400 rounded-bl-md"}`}
+                    ${
+                      m.who === "me"
+                        ? "bg-cloud-mine text-text-400 rounded-br-md"
+                        : "bg-cloud-partner text-text-400 rounded-bl-md"
+                    }`}
                 >
                   {m.text}
                 </div>
@@ -412,41 +544,70 @@ export default function Record() {
 
           {/* 진행중 말풍선 */}
           {composing.active && (
-            <div className={`flex ${composing.who === "me" ? "justify-end" : "justify-start"}`}>
+            <div
+              className={`flex ${
+                composing.who === "me" ? "justify-end" : "justify-start"
+              }`}
+            >
               <div
                 className={`max-w-[85%] h-full px-4 py-3 rounded-2xl text-base leading-7 opacity-95 whitespace-pre-wrap
-                  ${composing.who === "me" ? "bg-cloud-mine text-white rounded-br-md" : "bg-cloud-partner text-slate-800 rounded-bl-md"}`}
+                  ${
+                    composing.who === "me"
+                      ? "bg-cloud-mine text-white rounded-br-md"
+                      : "bg-cloud-partner text-slate-800 rounded-bl-md"
+                  }`}
               >
-                {(composing.text ? composing.text + (partialText ? " " : "") : "") + (partialText || "")}
+                {(composing.text
+                  ? composing.text + (partialText ? " " : "")
+                  : "") + (partialText || "")}
               </div>
             </div>
           )}
-
 
           <div ref={listEndRef} />
         </div>
       </div>
 
       {/* 하단: 내 버튼 */}
-      <button
+      {/* <button
         onClick={onMeClick}
         className={`absolute left-1/2 -translate-x-1/2
       bottom-[calc(env(safe-area-inset-bottom)+96px)]
       md:bottom-[calc(env(safe-area-inset-bottom)+187px)]
       w-20 h-20 rounded-full bg-white border-4 shadow-xl flex items-center justify-center
-      ${isRecording && role === "me" ? "border-cloud-partner" : "border-cloud-mine"}`}
+      ${
+        isRecording && role === "me"
+          ? "border-cloud-partner"
+          : "border-cloud-mine"
+      }`}
       >
         <span className="w-12 h-12">
           <img src="src/assets/images/구르미.svg" />
         </span>
-      </button>
+      </button> */}
+      <RecordButton
+        role="me"
+        isRecording={isRecording}
+        activeRole={role}
+        onClick={onMeClick}
+        title={isRecording && role === "me" ? "녹음 종료" : "내 녹음 시작"}
+        className="
+    absolute left-1/2 -translate-x-1/2
+    bottom-[calc(env(safe-area-inset-bottom)+180px)]
+    md:bottom-[calc(env(safe-area-inset-bottom)+187px)]
+  "
+      />
 
       {/* ✅ 결과 화면에서 '취소/저장' 버튼 (녹음이 끝났고 말풍선이 떠 있을 때만) */}
       {!isRecording && chat.length === 1 && (
         <div className="flex justify-around items-center p-3 mb-48 text-white text-lg font-semibold select-none">
-          <button onClick={cancelSession} className="opacity-90">취소</button>
+          <button onClick={cancelSession} className="opacity-90">
+            취소
+          </button>
 
-          <button onClick={() => setShowSave(true)} className="opacity-90">저장</button>
+          <button onClick={() => setShowSave(true)} className="opacity-90">
+            저장
+          </button>
         </div>
       )}
 

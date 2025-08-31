@@ -1,6 +1,26 @@
+// src/data/Emotion.js
+
+// 1) 테마별 감정 아이콘을 한 번에 모읍니다 (Vite 전용)
+const cloudImgs = import.meta.glob("../assets/images/emotion/cloud_*.png", {
+  eager: true,
+  import: "default",
+});
+const bearImgs = import.meta.glob("../assets/images/emotion/bear_*.png", {
+  eager: true,
+  import: "default",
+});
+
+// 2) 파일 키를 안전하게 꺼내는 헬퍼
+const img = (theme, key) => {
+  const map = theme === "bear" ? bearImgs : cloudImgs;
+  return map[`../assets/images/emotion/${theme}_${key}.png`] ?? "";
+};
+
+// 3) 감정 목록
 const EMOTIONS = [
   {
     id: 1,
+    key: "happy",
     name: "행복함",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -8,13 +28,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 호응을 해주거나 맞장구를 쳐주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/emotion/cloud_happy.png",
-      bear: "src/assets/images/emotion/bear_happy.png",
-    },
+    image: { cloud: img("cloud", "happy"), bear: img("bear", "happy") },
   },
   {
     id: 2,
+    key: "calm",
     name: "차분함",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -22,13 +40,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 상대의 말에 귀 기울여 주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/emotion/cloud.png",
-      bear: "src/assets/images/emotion/bear.png",
-    },
+    image: { cloud: img("cloud", "calm"), bear: img("bear", "calm") },
   },
   {
     id: 3,
+    key: "sad",
     name: "슬픔",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -36,13 +52,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 위로의 말을 건내주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/emotion/cloud_sad.png",
-      bear: "src/assets/images/emotion/bear_sad.png",
-    },
+    image: { cloud: img("cloud", "sad"), bear: img("bear", "sad") },
   },
   {
     id: 4,
+    key: "fear",
     name: "무서움",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -50,13 +64,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 진정시켜주는 말을 건네주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/구르미.svg",
-      bear: "src/assets/images/maumi.svg",
-    },
+    image: { cloud: img("cloud", "fear"), bear: img("bear", "fear") },
   },
   {
     id: 5,
+    key: "angry",
     name: "화남",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -64,13 +76,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 차분하게 진정할 수 있는 말을 건네주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/emotion/cloud_angry.png",
-      bear: "src/assets/images/emotion/bear_angry.png",
-    },
+    image: { cloud: img("cloud", "angry"), bear: img("bear", "angry") },
   },
   {
     id: 6,
+    key: "disgust",
     name: "혐오",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -78,13 +88,11 @@ const EMOTIONS = [
       "",
       "이럴 때는 잠시 기다려주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/구르미.svg",
-      bear: "src/assets/images/maumi.svg",
-    },
+    image: { cloud: img("cloud", "disgust"), bear: img("bear", "disgust") },
   },
   {
     id: 7,
+    key: "surprised",
     name: "놀람",
     description: [
       "이 표정은 상대방, 혹은 내가",
@@ -92,10 +100,7 @@ const EMOTIONS = [
       "",
       "이럴 때는 침착하게 한번 더 생각해주세요!",
     ],
-    image: {
-      cloud: "src/assets/images/emotion/cloud_surprised.png",
-      bear: "src/assets/images/emotion/bear_surprised.png",
-    },
+    image: { cloud: img("cloud", "surprised"), bear: img("bear", "surprised") },
   },
 ];
 

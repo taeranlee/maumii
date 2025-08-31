@@ -1,13 +1,25 @@
-import { useAuth } from "../context/AuthContext";
-
-const emotionImgs = import.meta.glob("../assets/images/cloud_*.png", {
+const cloudImgs = import.meta.glob("../assets/images/emotion/cloud_*.png", {
   eager: true,
   import: "default",
 });
-export const defaultHero = new URL("../assets/images/cloud_calm.png", import.meta.url).href;
+const bearImgs = import.meta.glob("../assets/images/emotion/bear_*.png", {
+  eager: true,
+  import: "default",
+});
 
-export function getEmotionImg(label) {
-  if (!label) return defaultHero;
-  const key = `../assets/images/cloud_${label}.png`;
-  return emotionImgs[key] ?? defaultHero;
+export const defaultHeroByTheme = {
+  cloud: new URL("../assets/images/emotion/cloud_calm.png", import.meta.url)
+    .href,
+  bear: new URL("../assets/images/emotion/bear_calm.png", import.meta.url).href,
+};
+
+export function getEmotionImg(theme, label) {
+  const t = theme === "bear" ? "bear" : "cloud";
+  const map = t === "bear" ? bearImgs : cloudImgs;
+
+  if (!label) return defaultHeroByTheme[t];
+  const key = `../assets/images/emotion/${t}_${String(
+    label
+  ).toLowerCase()}.png`;
+  return map[key] ?? defaultHeroByTheme[t];
 }
