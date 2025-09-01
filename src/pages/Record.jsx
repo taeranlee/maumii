@@ -11,6 +11,10 @@ import RecordButton from "../components/RecordButton";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useExposure } from "../useExposure.js";
 import { maskDotsToStars } from "../utils/maskDisplay";
+import LoadingSpinner from "../components/Loading";
+import AngryModal from "../components/AngryModal";
+import ConfirmModal from "../components/ConfirmModal";
+
 
 const debugForm = async (form) => {
   // ⚠️ 훅 사용 금지(컴포넌트 외부)
@@ -31,7 +35,7 @@ const debugForm = async (form) => {
 
 export default function Record() {
   const utterRawRef = useRef({ final: "", partial: "" });
-  const exposureOn = useExposure();
+  const { exposureOn } = useExposure();
   const { user } = useAuth();
   const userId = user?.uId;
   const { currentTheme } = useTheme(); // ✅ 컴포넌트 내부에서 훅 호출
@@ -45,6 +49,7 @@ export default function Record() {
   const [isRecording, setIsRecording] = useState(false);
   const [role, setRole] = useState(null);
   const roleRef = useRef(null);
+  const [recordClose, setRecordClose] = useState(false);
   const [saving, setSaving] = useState(false);
   const [emotion, setEmotion] = useState("calm");
   const [showSave, setShowSave] = useState(false);
@@ -86,6 +91,23 @@ export default function Record() {
   // 기존 상수 대신 함수 호출 결과 사용
   const WS_URL = buildWsUrl();
 
+  const BUBBLE = {
+    cloud: {
+      me: "bg-cloud-mine text-text-400 rounded-br-md",
+      partner: "bg-cloud-partner text-text-400 rounded-bl-md",
+    },
+    bear: {
+      me: "bg-bear-mine text-text-400 rounded-br-md",
+      partner: "bg-bear-partner text-text-400 rounded-bl-md",
+    },
+  };
+
+  const getBubbleClass = (who) =>
+    (who === "me"
+      ? BUBBLE[currentTheme]?.me
+      : BUBBLE[currentTheme]?.partner) ??
+    "bg-gray-200 text-text-400";
+
   useEffect(() => {
     if (!showSave) return;
     (async () => {
@@ -103,7 +125,11 @@ export default function Record() {
   const HERO_IMG_CLASS = "w-48 h-48";
   const isAngry = (em) => {
     const v = String(em || "").toLowerCase();
-    return ["angry"].includes(v);
+    // 백엔드 변형 라벨들 대비 + 접두어 방지
+    return (
+      ["angry"].includes(v) ||
+      v.startsWith("ang")
+    );
   };
 
   const pickMime = () => {
@@ -258,57 +284,57 @@ export default function Record() {
   };
 
   const stopRecording = async () => {
-  setIsRecording(false);
-  try { wsRef.current?.send("EOS"); } catch {}
-  try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch {}
-  mediaRecRef.current = null;
-  if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+    setIsRecording(false);
+    try { wsRef.current?.send("EOS"); } catch { }
+    try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch { }
+    mediaRecRef.current = null;
+    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
 
-  const prevState = composing;
+    const prevState = composing;
 
-  // 저장용 원문 최종 텍스트(= final + partial)
-  const rawFinal = (
-    (utterRawRef.current.final || "") +
-    (utterRawRef.current.partial
-      ? (utterRawRef.current.final ? " " : "") + utterRawRef.current.partial
-      : "")
-  ).trim();
+    // 저장용 원문 최종 텍스트(= final + partial)
+    const rawFinal = (
+      (utterRawRef.current.final || "") +
+      (utterRawRef.current.partial
+        ? (utterRawRef.current.final ? " " : "") + utterRawRef.current.partial
+        : "")
+    ).trim();
 
-  if (prevState.active && !commitLockRef.current && rawFinal) {
-    const newId = Date.now() + Math.random();
+    if (prevState.active && !commitLockRef.current && rawFinal) {
+      const newId = Date.now() + Math.random();
 
-    // 화면용은 마스킹
-    const viewText = exposureOn ? maskDotsToStars(rawFinal) : rawFinal;
+      // 화면용은 마스킹
+      const viewText = exposureOn ? maskDotsToStars(rawFinal) : rawFinal;
 
-    const detectedLabel = await sendToServer(prevState.who || "me", rawFinal);
-   const finalEmotion = (detectedLabel || emotion || "calm").toLowerCase();
+      const detectedLabel = await sendToServer(prevState.who || "me", rawFinal);
+      const finalEmotion = (detectedLabel || emotion || "calm").toLowerCase();
 
-    setChat([{ id: newId, who: prevState.who || "me", text: viewText }]);
-    setHeroId(newId);
+      setChat([{ id: newId, who: prevState.who || "me", text: viewText }]);
+      setHeroId(newId);
 
-    const audioBlob = new Blob(currentChunksRef.current, { type: "audio/ogg;codecs=opus" });
-    const endedAt = Date.now();
-    const bubbleForSession = {
-      id: newId,
-      speaker: prevState.who || "me",
-      text: viewText,                  // ✅ DB 저장은 원문
-      startedAt: utterStartRef.current,
-      endedAt,
-      durationMs: Math.max(0, endedAt - (utterStartRef.current || endedAt)),
-      audioBlob,
-      emotion: finalEmotion || "calm",
-    };
-    setSessionBubbles((old) => [...old, bubbleForSession]);
+      const audioBlob = new Blob(currentChunksRef.current, { type: "audio/ogg;codecs=opus" });
+      const endedAt = Date.now();
+      const bubbleForSession = {
+        id: newId,
+        speaker: prevState.who || "me",
+        text: viewText,                  // ✅ DB 저장은 원문
+        startedAt: utterStartRef.current,
+        endedAt,
+        durationMs: Math.max(0, endedAt - (utterStartRef.current || endedAt)),
+        audioBlob,
+        emotion: finalEmotion || "calm",
+      };
+      setSessionBubbles((old) => [...old, bubbleForSession]);
 
-    // sendToServer(prevState.who || "me", rawFinal);
-    commitLockRef.current = true;
-  }
+      // sendToServer(prevState.who || "me", rawFinal);
+      commitLockRef.current = true;
+    }
 
-  // 진행중 상태 정리
-  setComposing({ active: false, who: null, text: "" });
-  setPartialText("");
-  scrollToBottom();
-};
+    // 진행중 상태 정리
+    setComposing({ active: false, who: null, text: "" });
+    setPartialText("");
+    scrollToBottom();
+  };
 
   /** ---------- 테스트 전송 (그대로 유지) ---------- */
   const sendToServer = async (who, text) => {
@@ -319,9 +345,9 @@ export default function Record() {
         content: text,
       });
       console.log("✅ 서버 응답:", data);
-       const label = (data?.label || "").toLowerCase();
-   if (label) setEmotion(label);   // 화면 상태 갱신
-   return label || null;     
+      const label = (data?.label || "").toLowerCase();
+      if (label) setEmotion(label);   // 화면 상태 갱신
+      return label || null;
     } catch (err) {
       console.error("❌ 서버 전송 실패:", err);
       return null;
@@ -464,46 +490,16 @@ export default function Record() {
         />
       </div>
       {/* 🔴 화남 3연속 감지 배너 */}
-      {showAngryBanner && (
-        <div className="fixed top-16 left-0 right-0 z-50 w-full">
-          <div className="mx-4 mt-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 p-3 shadow">
-            <div className="flex items-start gap-3">
-              <div className="font-semibold">긴장 신호 감지</div>
-              <button
-                className="ml-auto text-red-500 hover:opacity-70"
-                onClick={() => setShowAngryBanner(false)}
-                aria-label="닫기"
-              >
-                닫기
-              </button>
-            </div>
-            <p className="text-sm mt-1">
-              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요.
-              잠깐 호흡하고 대화를 천천히 이어가볼까요?
-            </p>
-            <div className="flex gap-2 mt-2">
-              <button
-                className="px-3 py-1 rounded-lg bg-red-600 text-white"
-                onClick={() => {
-                  // 예: 도움말/호흡 가이드 열기
-                  setShowHelp(true);
-                }}
-              >
-                호흡 가이드
-              </button>
-              <button
-                className="px-3 py-1 rounded-lg border border-red-300"
-                onClick={() => {
-                  setShowAngryBanner(false);
-                  setAngryStreak(0);
-                }}
-              >
-                괜찮아요
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AngryModal
+        open={showAngryBanner}
+        onClose={() => {
+          setShowAngryBanner(false);
+          setAngryStreak(0);
+        }}
+        onGuide={() => {
+          setShowHelp(true);
+        }}
+      />
 
       {/* 상단: 상대 버튼 */}
       {/* <div
@@ -533,40 +529,40 @@ export default function Record() {
         className="mx-auto"
       />
 
-      {/* 중앙: 실시간/채팅 */}
-      <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
+      {/* 중앙: 히어로(항상) + 채팅 */}
+      <div className="flex-1 px-6 overflow-hidden flex flex-col items-center">
+
+        {/* 1) 히어로: 항상 표시, 상태에 따라 소스/투명도 변경 */}
+        <div className="mt-4 flex flex-col items-center space-y-2">
+          <div className="flex justify-center my-3 relative">
+            <img
+              src={getEmotionImg(currentTheme, emotion)}
+              alt={emotion || "hero"}
+              className={`${HERO_IMG_CLASS} transition-opacity duration-300 ${composing.active ? "opacity-40" : "opacity-100"
+                }`}
+            />
+
+            {composing.active && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <LoadingSpinner />
+              </div>
+            )}
+          </div>
+          {/* 녹음 전, 첫 화면에서만 "새로운 녹음" 텍스트 표시 */}
           {!isRecording && chat.length === 0 && (
-            <div className="flex flex-col items-center md:my-30 my-[30px] space-y-4">
-              <img
-                src={defaultHeroByTheme[currentTheme]}
-                alt="calm"
-                className={HERO_IMG_CLASS}
-              />
-              <div className="text-white text-lg font-semibold">새로운 녹음</div>
-            </div>
+            <div className="text-white text-lg font-semibold">새로운 녹음</div>
           )}
+        </div>
+
+
+        {/* 2) 채팅/진행중 말풍선 영역: 스크롤 가능 */}
+        <div className="w-full max-w-[720px] flex-1 overflow-y-auto">
           {chat.map((m) => (
             <div key={m.id}>
-              {m.id === heroId && (
-                <div className="flex justify-center my-4">
-                  <img
-                    src={getEmotionImg(currentTheme, emotion)}
-                    alt={emotion || "hero"}
-                    className={HERO_IMG_CLASS}
-                  />
-                </div>
-              )}
-              <div
-                className={`flex ${m.who === "me" ? "justify-end" : "justify-start"
-                  }`}
-              >
+              <div className={`flex ${m.who === "me" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap
-                    ${m.who === "me"
-                      ? "bg-cloud-mine text-text-400 rounded-br-md"
-                      : "bg-cloud-partner text-text-400 rounded-bl-md"
-                    }`}
+    ${getBubbleClass(m.who)}`}
                 >
                   {m.text}
                 </div>
@@ -576,20 +572,12 @@ export default function Record() {
 
           {/* 진행중 말풍선 */}
           {composing.active && (
-            <div
-              className={`flex ${composing.who === "me" ? "justify-end" : "justify-start"
-                }`}
-            >
+            <div className={`flex ${composing.who === "me" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] h-full px-4 py-3 rounded-2xl text-base leading-7 opacity-95 whitespace-pre-wrap
-                  ${composing.who === "me"
-                    ? "bg-cloud-mine text-white rounded-br-md"
-                    : "bg-cloud-partner text-slate-800 rounded-bl-md"
-                  }`}
+                className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap opacity-95
+    ${getBubbleClass(composing.who)}`}
               >
-                {(composing.text
-                  ? composing.text + (partialText ? " " : "")
-                  : "") + (partialText || "")}
+                {(composing.text ? composing.text + (partialText ? " " : "") : "") + (partialText || "")}
               </div>
             </div>
           )}
@@ -597,7 +585,6 @@ export default function Record() {
           <div ref={listEndRef} />
         </div>
       </div>
-
       {/* 하단: 내 버튼 */}
       {/* <button
         onClick={onMeClick}
@@ -615,31 +602,40 @@ export default function Record() {
           <img src="src/assets/images/구르미.svg" />
         </span>
       </button> */}
-      <RecordButton
-        role="me"
-        isRecording={isRecording}
-        activeRole={role}
-        onClick={onMeClick}
-        title={isRecording && role === "me" ? "녹음 종료" : "내 녹음 시작"}
-        className="
-    absolute left-1/2 -translate-x-1/2
-    bottom-[calc(env(safe-area-inset-bottom)+180px)]
-    md:bottom-[calc(env(safe-area-inset-bottom)+187px)]
-  "
-      />
+      {/* 하단: 내 버튼 + 취소/저장 (버튼 옆 배치) */}
+      <div className="mt-3 pb-[calc(env(safe-area-inset-bottom)+140px)]">
+        <div className="flex items-center justify-center gap-12 select-none">
+          {/* 왼쪽: 취소 (결과가 있을 때만 표시) */}
+          {!isRecording && chat.length === 1 && (
+            <button
+              onClick={() => setRecordClose(true)}
+              className="text-white text-lg font-semibold opacity-90"
+            >
+              취소
+            </button>
+          )}
 
-      {/* ✅ 결과 화면에서 '취소/저장' 버튼 (녹음이 끝났고 말풍선이 떠 있을 때만) */}
-      {!isRecording && chat.length === 1 && (
-        <div className="flex justify-around items-center p-3 mb-48 text-white text-lg font-semibold select-none">
-          <button onClick={cancelSession} className="opacity-90">
-            취소
-          </button>
+          {/* 가운데: 녹음 버튼 */}
+          <RecordButton
+            role="me"
+            isRecording={isRecording}
+            activeRole={role}
+            onClick={onMeClick}
+            title={isRecording && role === "me" ? "녹음 종료" : "내 녹음 시작"}
+            className="shrink-0"
+          />
 
-          <button onClick={() => setShowSave(true)} className="opacity-90">
-            저장
-          </button>
+          {/* 오른쪽: 저장 (결과가 있을 때만 표시) */}
+          {!isRecording && chat.length === 1 && (
+            <button
+              onClick={() => setShowSave(true)}
+              className="text-white text-lg font-semibold opacity-90"
+            >
+              저장
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
       {showEmotion && <EmotionCard onClose={() => setShowEmotion(false)} />}
@@ -648,6 +644,16 @@ export default function Record() {
         onClose={() => setShowSave(false)}
         lists={recordLists}
         onConfirm={(payload) => saveSession(payload)}
+      />
+      <ConfirmModal
+        isOpen={recordClose}
+        title="정말 취소하시겠습니까?"
+        description="녹음 기록이 지워집니다."
+        onConfirm={() => {           // ✅ 확인 → 세션 취소 + 모달 닫기
+          cancelSession();
+          setRecordClose(false);
+        }}
+        onCancel={() => setRecordClose(false)}   // ✅ 취소 → 모달 닫기
       />
     </div>
   );

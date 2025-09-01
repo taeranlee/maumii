@@ -3,6 +3,15 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      keyframes: {
+        pulseRing: {
+          "0%": { transform: "scale(1.1)", opacity: "0.8" },
+          "80%, 100%": { transform: "scale(1.6)", opacity: "0.1" },
+        },
+      },
+      animation: {
+        pulseRing: "pulseRing 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+      },
       fontFamily: {
         sans: ["Pretendard", "sans-serif"],
       },

@@ -1,11 +1,10 @@
 // src/components/RecordButton.jsx
 import { useTheme } from "../hooks/useTheme";
 import EMOTIONS from "../data/Emotion";
-
 export default function RecordButton({
-  role = "me", // "me" | "partner"
+  role = "me",
   isRecording = false,
-  activeRole = null, // 현재 녹음 중인 주체
+  activeRole = null,
   onClick,
   className = "",
   title = "",
@@ -13,25 +12,17 @@ export default function RecordButton({
   const { currentTheme } = useTheme();
   const isActive = isRecording && activeRole === role;
 
-  // 항상 "차분함" emotion 선택
   const calmEmotion = EMOTIONS.find((e) => e.name === "차분함");
   const iconSrc = calmEmotion?.image?.[currentTheme];
 
-  // 테두리 색상 매핑 (프로젝트에 맞게 조정)
   const BORDER = {
     cloud: {
-      me: { active: "border-cloud-partner", inactive: "border-cloud-mine" },
-      partner: {
-        active: "border-cloud-partner",
-        inactive: "border-cloud-partner",
-      },
+      me: { active: "border-cloud-mine", inactive: "border-cloud-mine" },
+      partner: { active: "border-cloud-partner", inactive: "border-cloud-partner" },
     },
     bear: {
-      me: { active: "border-bear-partner", inactive: "border-bear-mine" },
-      partner: {
-        active: "border-bear-partner",
-        inactive: "border-bear-partner",
-      },
+      me: { active: "border-bear-mine", inactive: "border-bear-mine" },
+      partner: { active: "border-bear-partner", inactive: "border-bear-partner" },
     },
   };
   const borderClass =
@@ -44,12 +35,21 @@ export default function RecordButton({
       onClick={onClick}
       title={title}
       className={[
-        "cursor-pointer w-20 h-20 rounded-full bg-white border-4 shadow-xl flex items-center justify-center",
+        "relative cursor-pointer w-20 h-20 rounded-full bg-white border-4 shadow-xl flex items-center justify-center overflow-visible",
         borderClass,
         className,
       ].join(" ")}
     >
-      <span className="w-12 h-12">
+      {/* 🔥 녹음 중일 때 파동 링 */}
+      {isActive && (
+        <span className={[
+        "absolute inset-0 rounded-full border-4 borderClass animate-pulseRing",
+        borderClass,
+      ].join(" ")}
+        ></span>
+      )}
+
+      <span className="w-12 h-12 relative z-10">
         <img
           src={iconSrc}
           alt="차분함"
