@@ -1,6 +1,8 @@
 // src/components/RecordButton.jsx
 import { useTheme } from "../hooks/useTheme";
 import EMOTIONS from "../data/Emotion";
+import clsx from "clsx";
+
 
 export default function RecordButton({
   role = "me", // "me" | "partner"
@@ -12,6 +14,13 @@ export default function RecordButton({
 }) {
   const { currentTheme } = useTheme();
   const isActive = isRecording && activeRole === role;
+
+  // 역할별 테두리 색(네가 쓰던 색상에 맞춰서)
+  const ringColor =
+    role === "me" ? "ring-cloud-mine/70" : "ring-cloud-partner/70";
+  const borderColor =
+    role === "me" ? "border-cloud-mine" : "border-cloud-partner";
+
 
   // 항상 "차분함" emotion 선택
   const calmEmotion = EMOTIONS.find((e) => e.name === "차분함");
@@ -43,11 +52,11 @@ export default function RecordButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={[
+      className={clsx([
         "cursor-pointer w-20 h-20 rounded-full bg-white border-4 shadow-xl flex items-center justify-center",
         borderClass,
         className,
-      ].join(" ")}
+      ].join(" "))}
     >
       <span className="w-12 h-12">
         <img
