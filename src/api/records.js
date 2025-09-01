@@ -4,7 +4,7 @@ import api from "./api";
 export const RecordsAPI = {
   /** 레코드 리스트 이름들 가져오기: [{id, name}] */
   async getRecordNames(uId) {
-    uId = "test01";
+    console.log("uId"+uId);
     const { data } = await api.get(`/api/records/${uId}/record-name`);
     return Array.isArray(data) ? data : [];
   },

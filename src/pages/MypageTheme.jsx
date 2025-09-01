@@ -11,22 +11,22 @@ import ConfirmModal from "../components/ConfirmModal";
 
 export default function MypageTheme() {
   const [theme, setTheme] = useState("cloud");
-  const [level, setLevel] = useState("all");
+  const [level, setLevel] = useState("false");
   const [loading, setLoading] = useState(false);
 
-  // 🔔 알럿 모달 상태들
+  // 🔔 알럿 모달 상태들s
   const [showNoChange, setShowNoChange] = useState(false);  // 변경사항 없음
   const [showMissingUser, setShowMissingUser] = useState(false); // 사용자 없음
   const [showSaved, setShowSaved] = useState(false);         // 저장 성공
   const [errorMsg, setErrorMsg] = useState("");              // 에러
 
-  const { user } = useAuth();
+  const { user, updateUserInfo } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
       setTheme(user.uTheme || "cloud");
-      setLevel(user.uExposure ? "all" : "calm");
+      setLevel(user.uExposure ? "false" : "true");
     }
   }, [user]);
 
@@ -37,7 +37,7 @@ export default function MypageTheme() {
     }
 
     const currentTheme = user.uTheme || "cloud";
-    const currentExposure = user.uExposure ? "all" : "calm";
+    const currentExposure = user.uExposure ? "false" : "true"; //true일때 필터 적용 
 
     if (currentTheme === theme && currentExposure === level) {
       setShowNoChange(true);
@@ -49,14 +49,19 @@ export default function MypageTheme() {
 
       const requestData = {
         uTheme: theme,
-        uExposure: level === "all",
+        uExposure: level === "false",
       };
 
       await api.put(`/api/users/${user.uId}/preference`, requestData, {
         headers: { "Content-Type": "application/json" },
       });
 
-      setShowSaved(true); // 저장 성공 알럿
+
+        updateUserInfo({
+          uTheme: requestData.uTheme,
+          uExposure: requestData.uExposure, 
+        });
+        setShowSaved(true);
     } catch (err) {
       console.error("테마 설정 업데이트 실패:", err);
 

@@ -9,6 +9,8 @@ import { getEmotionImg, defaultHeroByTheme } from "../utils/emotion";
 import { useTheme } from "../hooks/useTheme";
 import RecordButton from "../components/RecordButton";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useExposure } from "../useExposure.js";
+import { maskDotsToStars } from "../utils/maskDisplay";
 
 const debugForm = async (form) => {
   // ⚠️ 훅 사용 금지(컴포넌트 외부)
@@ -28,7 +30,9 @@ const debugForm = async (form) => {
 };
 
 export default function Record() {
-  const user = useAuth();
+  const utterRawRef = useRef({ final: "", partial: "" });
+  const exposureOn = useExposure();
+  const { user } = useAuth();
   const userId = user?.uId;
   const { currentTheme } = useTheme(); // ✅ 컴포넌트 내부에서 훅 호출
 
@@ -64,8 +68,23 @@ export default function Record() {
   const currentChunksRef = useRef([]); // ✅ 이번 발화의 오디오 청크들
   const utterStartRef = useRef(null); // ✅ 발화 시작시간
 
-  const WS_URL =
-    "ws://localhost:9000/ws/stt?encoding=OGG_OPUS&sample_rate=16000&use_itn=true&model_name=sommers_ko&domain=CALL";
+  // 노출 설정에 따라 WS URL 생성
+  const buildWsUrl = () => {
+    const base = "ws://localhost:9000/ws/stt";
+    const params = new URLSearchParams({
+      encoding: "OGG_OPUS",
+      sample_rate: "16000",
+      use_itn: "true",
+      model_name: "sommers_ko",
+      domain: "CALL",
+      // 필요시: use_disfluency_filter: "true",
+    });
+    params.set("use_profanity_filter", exposureOn ? "true" : "false");
+    return `${base}?${params.toString()}`;
+  };
+
+  // 기존 상수 대신 함수 호출 결과 사용
+  const WS_URL = buildWsUrl();
 
   useEffect(() => {
     if (!showSave) return;
@@ -138,9 +157,18 @@ export default function Record() {
         if (!parsed) return;
 
         if (parsed.isFinal && parsed.text) {
+          utterRawRef.current.final =
+            (utterRawRef.current.final
+              ? utterRawRef.current.final + " "
+              : "") + parsed.text;
+          utterRawRef.current.partial = ""; // final 났으니 partial 비움
+
+          // UI 노출은 별표
+          const uiText = exposureOn ? maskDotsToStars(parsed.text) : parsed.text;
+
           setComposing((prev) => {
             if (!prev.active) return prev;
-            const merged = (prev.text ? prev.text + " " : "") + parsed.text;
+            const merged = (prev.text ? prev.text + " " : "") + uiText;
             return { ...prev, text: merged.trim() };
           });
           setPartialText("");
@@ -148,7 +176,10 @@ export default function Record() {
           return;
         }
         if (parsed.isPartial && parsed.text) {
-          setPartialText(parsed.text);
+          // 원문 partial 저장
+          utterRawRef.current.partial = parsed.text;
+          // UI는 별표
+          setPartialText(exposureOn ? maskDotsToStars(parsed.text) : parsed.text);
           return;
         }
       };
@@ -166,7 +197,7 @@ export default function Record() {
     if (wsRef.current) {
       try {
         wsRef.current.close(1000, "user-toggle");
-      } catch {}
+      } catch { }
       wsRef.current = null;
     }
     setConnected(false);
@@ -177,6 +208,7 @@ export default function Record() {
     // 이번 발화 준비
     currentChunksRef.current = [];
     utterStartRef.current = Date.now(); // ✅ 시작시간
+    utterRawRef.current = { final: "", partial: "" };
     setChat([]); // 이전 발화 제거
     setHeroId(null);
     setComposing({ active: true, who, text: "" });
@@ -225,62 +257,58 @@ export default function Record() {
     setIsRecording(true);
   };
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    try {
-      wsRef.current?.send("EOS");
-    } catch {}
-    try {
-      if (mediaRecRef.current && mediaRecRef.current.state !== "inactive")
-        mediaRecRef.current.stop();
-    } catch {}
-    mediaRecRef.current = null;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
+  const stopRecording = async () => {
+  setIsRecording(false);
+  try { wsRef.current?.send("EOS"); } catch {}
+  try { if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") mediaRecRef.current.stop(); } catch {}
+  mediaRecRef.current = null;
+  if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
 
-    setComposing((prev) => {
-      if (prev.active && !commitLockRef.current) {
-        const finalText = (
-          (prev.text || "") +
-          (partialText ? (prev.text ? " " : "") + partialText : "")
-        ).trim();
-        if (finalText) {
-          const newId = Date.now() + Math.random();
-          setChat([{ id: newId, who: prev.who || "me", text: finalText }]);
-          setHeroId(newId);
+  const prevState = composing;
 
-          // ✅ 이번 발화의 오디오 Blob/메타를 세션 버퍼에 저장
-          const audioBlob = new Blob(currentChunksRef.current, {
-            type: "audio/ogg;codecs=opus",
-          });
-          const endedAt = Date.now();
-          const bubbleForSession = {
-            id: newId,
-            speaker: prev.who || "me",
-            text: finalText,
-            startedAt: utterStartRef.current,
-            endedAt,
-            durationMs: Math.max(
-              0,
-              endedAt - (utterStartRef.current || endedAt)
-            ),
-            audioBlob, // 🔴 파일
-            emotion: emotion || "calm",
-          };
-          setSessionBubbles((old) => [...old, bubbleForSession]);
+  // 저장용 원문 최종 텍스트(= final + partial)
+  const rawFinal = (
+    (utterRawRef.current.final || "") +
+    (utterRawRef.current.partial
+      ? (utterRawRef.current.final ? " " : "") + utterRawRef.current.partial
+      : "")
+  ).trim();
 
-          sendToServer(prev.who || "me", finalText);
-        }
-        commitLockRef.current = true;
-      }
-      setPartialText("");
-      return { active: false, who: null, text: "" };
-    });
+  if (prevState.active && !commitLockRef.current && rawFinal) {
+    const newId = Date.now() + Math.random();
 
-    scrollToBottom();
-  };
+    // 화면용은 마스킹
+    const viewText = exposureOn ? maskDotsToStars(rawFinal) : rawFinal;
+
+    const detectedLabel = await sendToServer(prevState.who || "me", rawFinal);
+   const finalEmotion = (detectedLabel || emotion || "calm").toLowerCase();
+
+    setChat([{ id: newId, who: prevState.who || "me", text: viewText }]);
+    setHeroId(newId);
+
+    const audioBlob = new Blob(currentChunksRef.current, { type: "audio/ogg;codecs=opus" });
+    const endedAt = Date.now();
+    const bubbleForSession = {
+      id: newId,
+      speaker: prevState.who || "me",
+      text: viewText,                  // ✅ DB 저장은 원문
+      startedAt: utterStartRef.current,
+      endedAt,
+      durationMs: Math.max(0, endedAt - (utterStartRef.current || endedAt)),
+      audioBlob,
+      emotion: finalEmotion || "calm",
+    };
+    setSessionBubbles((old) => [...old, bubbleForSession]);
+
+    // sendToServer(prevState.who || "me", rawFinal);
+    commitLockRef.current = true;
+  }
+
+  // 진행중 상태 정리
+  setComposing({ active: false, who: null, text: "" });
+  setPartialText("");
+  scrollToBottom();
+};
 
   /** ---------- 테스트 전송 (그대로 유지) ---------- */
   const sendToServer = async (who, text) => {
@@ -291,10 +319,12 @@ export default function Record() {
         content: text,
       });
       console.log("✅ 서버 응답:", data);
-      const label = data?.label;
-      setEmotion(label);
+       const label = (data?.label || "").toLowerCase();
+   if (label) setEmotion(label);   // 화면 상태 갱신
+   return label || null;     
     } catch (err) {
       console.error("❌ 서버 전송 실패:", err);
+      return null;
     }
   };
   useEffect(() => {
@@ -406,7 +436,7 @@ export default function Record() {
     return () => {
       try {
         mediaRecRef.current?.stop();
-      } catch {}
+      } catch { }
       if (streamRef.current)
         streamRef.current.getTracks().forEach((t) => t.stop());
       disconnectWS();
@@ -507,12 +537,13 @@ export default function Record() {
       <div className="flex-1 mt-4 px-6 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-10">
           {!isRecording && chat.length === 0 && (
-            <div className="flex justify-center md:my-20 my-[30px]">
+            <div className="flex flex-col items-center md:my-30 my-[30px] space-y-4">
               <img
                 src={defaultHeroByTheme[currentTheme]}
                 alt="calm"
                 className={HERO_IMG_CLASS}
               />
+              <div className="text-white text-lg font-semibold">새로운 녹음</div>
             </div>
           )}
           {chat.map((m) => (
@@ -527,16 +558,14 @@ export default function Record() {
                 </div>
               )}
               <div
-                className={`flex ${
-                  m.who === "me" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${m.who === "me" ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-base leading-7 whitespace-pre-wrap
-                    ${
-                      m.who === "me"
-                        ? "bg-cloud-mine text-text-400 rounded-br-md"
-                        : "bg-cloud-partner text-text-400 rounded-bl-md"
+                    ${m.who === "me"
+                      ? "bg-cloud-mine text-text-400 rounded-br-md"
+                      : "bg-cloud-partner text-text-400 rounded-bl-md"
                     }`}
                 >
                   {m.text}
@@ -548,16 +577,14 @@ export default function Record() {
           {/* 진행중 말풍선 */}
           {composing.active && (
             <div
-              className={`flex ${
-                composing.who === "me" ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${composing.who === "me" ? "justify-end" : "justify-start"
+                }`}
             >
               <div
                 className={`max-w-[85%] h-full px-4 py-3 rounded-2xl text-base leading-7 opacity-95 whitespace-pre-wrap
-                  ${
-                    composing.who === "me"
-                      ? "bg-cloud-mine text-white rounded-br-md"
-                      : "bg-cloud-partner text-slate-800 rounded-bl-md"
+                  ${composing.who === "me"
+                    ? "bg-cloud-mine text-white rounded-br-md"
+                    : "bg-cloud-partner text-slate-800 rounded-bl-md"
                   }`}
               >
                 {(composing.text
