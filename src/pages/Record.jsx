@@ -347,20 +347,34 @@ export default function Record() {
       console.log("✅ 서버 응답:", data);
       const label = (data?.label || "").toLowerCase();
       if (label) setEmotion(label);   // 화면 상태 갱신
+      setAngryStreak(prev => {
+     const next = isAngry(label) ? prev + 1 : 0;
+     console.log("[ANGRY] label =", label, "prev =", prev, "→ next =", next);
+     if (next >= 3 && !showAngryBanner) {
+      console.log("[ANGRY] threshold reached → open modal");
+       setShowAngryBanner(true);
+     }
+     return next;
+   });
       return label || null;
     } catch (err) {
       console.error("❌ 서버 전송 실패:", err);
       return null;
     }
   };
-  useEffect(() => {
-    if (!emotion) return;
+//   useEffect(() => {
+//     if (!emotion) return;
+//  setAngryStreak((prev) => {
+//    const next = isAngry(emotion) ? prev + 1 : 0;
+//    console.log("[ANGRY] emotion:", emotion, "→ streak:", next);
+//    return next;
+//  });
+//   }, [emotion]);
 
-    setAngryStreak((prev) => (isAngry(emotion) ? prev + 1 : 0));
-  }, [emotion]);
-
   useEffect(() => {
-    if (angryStreak >= 1) {
+    if (angryStreak >= 3) {
+   console.log("[ANGRY] show modal, streak:", angryStreak);
+      
       setShowAngryBanner(true);
       // 자동 닫기 원하면 10초 뒤 닫기
       // const t = setTimeout(() => setShowAngryBanner(false), 10000);

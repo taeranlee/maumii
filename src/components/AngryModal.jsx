@@ -86,7 +86,7 @@ export default function AngryModal({ open, onClose, onGuide }) {
 
   {/* 내용 */}
   <div className="px-5 sm:px-6 text-center">  {/* 🔥 text-center */}
-    <div className="text-[#A960B0] font-semibold text-base sm:text-lg mb-2">
+    <div className="text-primary font-semibold text-base sm:text-lg mb-2">
       여기서 잠깐!
     </div>
 
@@ -99,7 +99,7 @@ export default function AngryModal({ open, onClose, onGuide }) {
     {/* 버튼들 */}
     <div className="mt-6 flex gap-3 justify-center">
       <button
-        className="px-5 py-2 rounded-xl bg-[#A960B0] text-white text-sm font-medium hover:opacity-90 transition"
+        className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:opacity-90 transition"
         onClick={onClose}
       >
         괜찮아요
