@@ -55,7 +55,7 @@ export default function Mypage() {
           <span className="font-bold text-gray-500">나의 보호자 관리</span>
           <IoIosArrowForward className="text-gray-500" />
         </Link>
-        <Link to="/" className="h-7 mx-5 flex justify-between items-center">
+        <Link to="/record-list" className="h-7 mx-5 flex justify-between items-center">
           <span className="font-bold text-gray-500">나의 대화 기록</span>
           <IoIosArrowForward className="text-gray-500" />
         </Link>

@@ -426,7 +426,7 @@ export default function Record() {
           onClick={() => setShowEmotion(true)}
         />
         <div className="text-base text-white font-semibold">
-          {isRecording ? "▶ 녹음중..." : "⏸ 녹음중지"}
+          {isRecording ? "▶ 녹음 중..." : "⏸ 녹음 중지"}
         </div>
         <FiHelpCircle
           className="text-white h-6 w-6"
@@ -448,8 +448,8 @@ export default function Record() {
               </button>
             </div>
             <p className="text-sm mt-1">
-              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요. 잠깐
-              호흡하고 대화를 천천히 이어가볼까요?
+              최근 대화에서 <b>화남</b> 감정이 3회 연속 감지됐어요.
+              잠깐 호흡하고 대화를 천천히 이어가볼까요?
             </p>
             <div className="flex gap-2 mt-2">
               <button

@@ -4,7 +4,7 @@ import { useTheme } from "../hooks/useTheme";
 import { getEmotionImg } from "../utils/emotion";
 import { THEMES, getBubbleBg } from "../utils/themeUtils"; // ⬅️ getBubbleBg 가져오기
 
-function Bubble({ me = false, text = "", sub, isActive = false, emotion }) {
+function Bubble({ bId, me = false, text = "", sub, isActive = false, emotion }) {
   const { currentTheme } = useTheme();
 
   const avatar =

@@ -28,6 +28,7 @@ export default {
         cloud: {
           partner: "#BDD6F3",
           mine: "#F8CBDE",
+          // loading: "shadow-[0_2_6px_rgba(248, 203, 222, 0.7)]"
         },
         bear: {
           partner: "#FAF2C7",

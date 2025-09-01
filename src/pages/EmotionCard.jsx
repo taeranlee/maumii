@@ -107,7 +107,7 @@ export default function EmotionCard({ onClose }) {
               }}
             >
               <div className="text-center">
-                <div className="text-sm opacity-80 mb-2">MAUMI COLLECTION</div>
+                <div className="text-sm opacity-80 mb-2">마음이 감정 카드</div>
                 <div className="text-3xl font-extrabold tracking-widest">
                   EMOTION
                 </div>
