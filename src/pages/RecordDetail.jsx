@@ -392,7 +392,7 @@ export default function RecordDetail() {
                             setEditingTalk(prev => prev ? { ...prev, emotion: em.key } : prev)
                           }
                         >
-                          <img src={em.image[currentTheme]} alt={em.key} className="w-16 h-16" />
+                          <img src={em.image[currentTheme]} alt={em.key} className="w-16 h-16 object-cover" />
                         </div>
                       );
                     })}
