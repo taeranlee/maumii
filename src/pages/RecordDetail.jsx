@@ -127,12 +127,12 @@ export default function RecordDetail() {
   };
 
   // 말풍선 편집
-  const openEditTalk = (sectionId, talkId, currentText, currentEmotion) => {
+  const openEditTalk = (sectionId, bId, currentText, currentEmotion) => {
     setEditingTalk({ 
       sectionId, 
-      talkId, 
+      bId, 
       text: currentText,
-      emotion: currentEmotion,
+      emotion: typeof currentEmotion === "string" ? currentEmotion : currentEmotion?.name || "",
     });
     setSheetOpen(true);
   };
@@ -143,14 +143,13 @@ export default function RecordDetail() {
 
     try {
       const res = await axios.put(
-        `http://localhost:9000/api/records/bubble/${editingTalk.talkId}`,
+        `http://localhost:9000/api/records/bubble/${editingTalk.bId}`,
         {
           bText: editingTalk.text,
           bEmotion: editingTalk.emotion,
         }
       );
       const { bText, bEmotion } = res.data;
-      console.log("bText 이랑 bEmotion 출력 테스트 : "+bText+bEmotion);
 
       setLocalSections((prevSections) =>
         prevSections.map((sec) => {
@@ -159,7 +158,7 @@ export default function RecordDetail() {
           return {
             ...sec,
             talks: sec.talks.map((t) =>
-              t.id === editingTalk.talkId ? { ...t, text: bText, emotion: bEmotion } : t
+              t.bId === editingTalk.bId ? { ...t, text: bText, emotion: bEmotion } : t
             ),
           };
         })
@@ -318,11 +317,14 @@ export default function RecordDetail() {
               <div className="bg-white rounded-3xl pt-1 pb-3 px-3">
                 {sec.talks.map((t) => {
                   return (
-                    <div key={t.id}>
+                    <div key={t.bId}>
                       <button
                         type="button"
                         className="w-full text-left"
-                        onClick={() => openEditTalk(sec.id, t.id, t.text, t.emotion)}
+                        onClick={() => {
+                          openEditTalk(sec.id, t.bId, t.text, t.emotion);
+                          console.log("Clicked Bubble Id : ", t.bId);
+                        }}
                         // onClick={() => {
                         //   const a = audioRef.current;
                         //   if (!a) return;
@@ -336,6 +338,7 @@ export default function RecordDetail() {
                         // }}
                       >
                         <Bubble 
+                          id={t.bId} // DB bId
                           me={t.me}
                           text={t.text}
                           sub={t.sub}
@@ -354,14 +357,17 @@ export default function RecordDetail() {
         })}
       </div>
 
-      {/* ===== Bottom Sheet ===== */}
+      {/* ===== Bubble Update Sheet ===== */}
       {sheetOpen &&
         editingTalk &&
         createPortal(
           <div className="absolute inset-0 z-50">
             <div
               className="absolute inset-0 bg-black/40 rounded-3xl"
-              onClick={() => setSheetOpen(false)}
+              onClick={() => {
+                setSheetOpen(false);
+                setEditingTalk(null);
+              }}
             />
 
             <div
@@ -374,7 +380,7 @@ export default function RecordDetail() {
                 </div>
                 <div className="flex justify-center flex-wrap mt-4 px-4 pb-6">
                     {EMOTIONS.map((em) => {
-                      const selected = editingTalk?.emotion === em.name; // 현재 선택된 감정과 비교
+                      const selected = editingTalk?.emotion === em.key; // 현재 선택된 감정과 비교
                       return (
                         <div
                           key={em.id}
@@ -383,10 +389,10 @@ export default function RecordDetail() {
                             ${selected ? "shadow-[0_0_8px_rgba(126,104,255,0.7)] scale-110" : "ring-0 scale-100"}
                           `}
                           onClick={() =>
-                            setEditingTalk(prev => prev ? { ...prev, emotion: em.name } : prev)
+                            setEditingTalk(prev => prev ? { ...prev, emotion: em.key } : prev)
                           }
                         >
-                          <img src={em.image[currentTheme]} alt={em.name} className="w-16 h-16" />
+                          <img src={em.image[currentTheme]} alt={em.key} className="w-16 h-16" />
                         </div>
                       );
                     })}
@@ -421,7 +427,8 @@ export default function RecordDetail() {
             </div>
           </div>,
           document.body
-        )}
+        )
+      }
 
       <ConfirmModal
         isOpen={openDeleteModal}

@@ -34,13 +34,13 @@ export function useRecords(rlId, userId) {
               (typeof b?.bLength === "string" ? toMsFromLocalTime(b.bLength) : 0);
 
             const talk = {
-              id: idx + 1,
+              bId: b?.bId,
               me: (b?.bTalker || "").toLowerCase() === "me",
               text: b?.bText || "",
               sub: fmtStartLabel(cursorMs),
               startMs: cursorMs,
               endMs: cursorMs + Math.max(0, lenMs),
-              emotion: b?.bEmotion || ""
+              emotion: b?.bEmotion?.name || b?.bEmotion || ""
             };
             cursorMs += Math.max(0, lenMs);
             return talk;

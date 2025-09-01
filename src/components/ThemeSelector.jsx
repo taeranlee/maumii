@@ -1,7 +1,10 @@
+import cloudCalm from '../assets/images/emotion/cloud_calm.png';
+import bearCalm from '../assets/images/emotion/bear_calm.png';
+
 export default function ThemeSelector({theme, setTheme}) {
     const THEMES = [
-        { key: "cloud", label: "구르미", emoji: "☁️" /*, img: cloud*/ },
-        { key: "bear", label: "고미", emoji: "🐻" /*, img: bear*/ },
+        { key: "cloud", label: "구르미", emoji: "☁️" , img: cloudCalm },
+        { key: "bear", label: "고미", emoji: "🐻" , img: bearCalm },
     ];
 
     return (
@@ -23,8 +26,8 @@ export default function ThemeSelector({theme, setTheme}) {
                             ].join(" ")}
                         >
                             <div className="grid place-items-center py-1 gap-3">
-                                {/* 이미지 있으면 <img src={t.img} .../> 로 교체 */}
-                                <div className="text-5xl">{t.emoji}</div>
+                                {/* <div className="text-5xl">{t.emoji}</div> */}
+                                <img src={t.img} className="w-20" />
                                 <div className="text-base font-semibold text-slate-800">{t.label}</div>
                             </div>
                         </button>
