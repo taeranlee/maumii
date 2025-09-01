@@ -208,7 +208,7 @@ export default function RecordDetail() {
                 className="flex items-center gap-2 text-sm text-slate-600"
               >
                 <span className="px-2 py-1 rounded-md bg-button-edit text-white">
-                  저장
+                  수정
                 </span>
               </button>
               <button

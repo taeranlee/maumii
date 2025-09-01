@@ -51,7 +51,7 @@ function Bubble({ bId, me = false, text = "", sub, isActive = false, emotion }) 
       {/* 나(오른쪽) */}
       {me && (
         <div className="ml-auto mr-0 flex items-end gap-3">
-          <div className="max-w-[70%] text-right">
+          <div className="max-w-[70%]">
             <div
               className={[
                 "rounded-2xl px-4 py-3 whitespace-pre-wrap break-words leading-6 text-[14px] shadow",

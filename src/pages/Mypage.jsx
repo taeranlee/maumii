@@ -1,17 +1,24 @@
+import axios from "axios";
+import { useState } from "react";
 import Title from "../components/Title";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowForward } from "react-icons/io";
 import { FaArrowRightToBracket } from "react-icons/fa6";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../hooks/useTheme";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Mypage() {
   const { user, logout } = useAuth();
   const { themeConfig } = useTheme();
+  const navigate = useNavigate();
+  const [logoutCall, setLogoutCall] = useState(false); // alert 모달 상태들
 
   const handleLogout = async () => {
     try {
+      // await axios.post(`http://localhost:9000/api/auth/logout`);
       await logout();
+      navigate("/login");
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
@@ -73,13 +80,27 @@ export default function Mypage() {
       </div>
       <div className="mt-10">
         <button
-          onClick={handleLogout}
+          onClick={() => setLogoutCall(true)}
           className="text-center flex justify-center items-center w-full cursor-pointer"
         >
           <FaArrowRightToBracket className="mr-2 text-sm text-gray-400" />
           <span className="text-sm text-gray-400">로그아웃</span>
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={logoutCall}
+        title="정말 로그아웃 하시겠습니까? "
+        onConfirm={async () => {
+          try {
+            await handleLogout(); // logout 실행
+            setLogoutCall(false); // 모달 닫기
+          } catch (err) {
+            console.error("로그아웃 실패:", err);
+          }
+        }}
+        onCancel={() => setLogoutCall(false)}
+      />
     </div>
   );
 }
