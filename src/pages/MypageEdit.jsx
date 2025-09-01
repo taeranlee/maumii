@@ -7,6 +7,7 @@ import Input from "../components/Input";
 import api from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../hooks/useTheme";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function MypageEdit() {
   const [phone, setPhone] = useState("");
@@ -18,19 +19,24 @@ export default function MypageEdit() {
   const { user, updateUserInfo } = useAuth();
   const { themeConfig } = useTheme();
 
+  // alert 모달 상태들
+  const [phoneInsert, setPhoneInsert] = useState(false); // 전화번호 입력 없음
+  const [phoneType, setPhoneType] = useState(false); // 전화번호 형식 오류
+  const [pwInsert, setPwInsert] = useState(false); // 비밀번호 입력 없음
+  const [pwLength, setPwLength] = useState(false); // 비밀번호 길이 오류
 
   const canSave = useMemo(() => Object.keys(staged).length > 0, [staged]);
 
   const stagePhone = () => {
     if (!phone.trim()) {
-      alert("전화번호를 입력해주세요.");
+      setPhoneInsert(true);
       return;
     }
 
     // 전화번호 형식 검증
     const phoneRegex = /^010-\d{4}-\d{4}$/;
     if (!phoneRegex.test(phone.trim())) {
-      alert("전화번호 형식을 확인해주세요. (예: 010-1234-5678)");
+      setPhoneType(true);
       return;
     }
 
@@ -39,12 +45,12 @@ export default function MypageEdit() {
 
   const stagePw = () => {
     if (!pw.trim()) {
-      alert("비밀번호를 입력해주세요.");
+      setPwInsert(true);
       return;
     }
 
     if (pw.trim().length < 4) {
-      alert("비밀번호는 4자 이상 입력해주세요.");
+      setPwLength(true);
       return;
     }
 
@@ -143,26 +149,17 @@ export default function MypageEdit() {
           className="text-lg font-bold"
           style={{ letterSpacing: "5px", display: "inline-block" }}
         >
-          {user?.uName || "차은우"}
+          {user?.uName || "마음이"}
         </h2>
       </div>
 
       <form className="overflow-y-auto h-full bg-white" onSubmit={onSubmit}>
-        {/* 현재 전화번호 표시 */}
-        {user?.uPhone && (
-          <div className="px-1 mb-2">
-            <p className="text-sm text-gray-600">
-              현재 전화번호: {user.uPhone}
-            </p>
-          </div>
-        )}
-
         {/* 전화번호 */}
         <div className="flex items-end gap-2 mt-6 px-1">
           <Input
             className="flex-1"
             label="전화번호 변경하기"
-            placeholder="010-0000-0000"
+            placeholder={user?.uPhone || "010-0000-0000"}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
@@ -205,6 +202,38 @@ export default function MypageEdit() {
           </Button>
         </div>
       </form>
+
+      {/* alert 창 */}
+      <ConfirmModal
+        isOpen={phoneInsert}
+        mode="alert"
+        title="전화번호를 입력해주세요."
+        onCancel={() => setPhoneInsert(false) }
+      />
+
+      <ConfirmModal
+        isOpen={phoneType}
+        mode="alert"
+        title="전화번호 형식을 확인해주세요."
+        description="예 : 010-1234-5678"
+        onCancel={() => setPhoneType(false) }
+      />
+
+      <ConfirmModal
+        isOpen={pwInsert}
+        mode="alert"
+        title="비밀번호를 입력해주세요."
+        onCancel={() => setPwInsert(false) }
+      />
+
+      <ConfirmModal
+        isOpen={pwLength}
+        mode="alert"
+        title="비밀번호 길이를 확인해주세요."
+        description="비밀번호는 4자 이상 설정 가능합니다"
+        onCancel={() => setPwLength(false) }
+      />
+
     </div>
   );
 }

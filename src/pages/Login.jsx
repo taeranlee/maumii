@@ -5,6 +5,7 @@ import Input from "../components/Input";
 import Title from "../components/Title";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Login() {
   const { login, isAuth, checked } = useAuth();
@@ -12,13 +13,17 @@ export default function Login() {
   const [uPwd, setUPwd] = useState("");
   const [kakaoLoading, setKakaoLoading] = useState(false);
   const navigate = useNavigate();
-
   const location = useLocation();
+
+  // alert 모달 상태들
+  const [loginInput, setLoginInput] = useState(false); // 입력 없음
+  const [loginValue, setLoginValue] = useState(false); // 값 일치 오류
+  const [loginCall, setLoginCall] = useState(false); // 로그인 실패 오류
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("error")) {
-      alert("로그인에 실패했습니다. 다시 시도해주세요.");
+      setLoginCall(true);
     }
   }, [location]);
   // 이미 로그인 상태라면 홈으로 보냄
@@ -31,14 +36,14 @@ export default function Login() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!uId || !uPwd) {
-      alert("아이디와 비밀번호를 입력해주세요.");
+      setLoginInput(true);
       return;
     }
     try {
       await login(uId, uPwd); // Context의 login 함수 호출 → 세션 저장
       navigate("/record"); // 로그인 성공 후 홈으로 이동
     } catch {
-      alert("아이디 혹은 비밀번호가 올바르지 않습니다.");
+      setLoginValue(true);
     }
   };
 
@@ -50,6 +55,7 @@ export default function Login() {
   });
 
   return (
+    <>
     <form onSubmit={onSubmit} className="flex-1 bg-white">
       <div className="m-16">
         <Title variant="auth">로그인</Title>
@@ -75,7 +81,7 @@ export default function Login() {
           </Button>
           <div className="text-end text-sm text-slate-400">회원가입</div>
         </div>
-{/*  옵션: 소셜 로그인 섹션
+        {/*  옵션: 소셜 로그인 섹션
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-200" />
@@ -86,20 +92,18 @@ export default function Login() {
             </span>
           </div>
         </div>
-        
-
-      <Button
-        full
-        variant="outline"
-        disabled={kakaoLoading}
-        onClick={() => {
-          if (kakaoLoading) return;
-          setKakaoLoading(true);
-          window.location.href = "http://localhost:9000/oauth2/authorization/kakao";
-        }}
-      >
+        <Button
+          full
+          variant="outline"
+          disabled={kakaoLoading}
+          onClick={() => {
+            if (kakaoLoading) return;
+            setKakaoLoading(true);
+            window.location.href = "http://localhost:9000/oauth2/authorization/kakao";
+          }}
+        >
         {kakaoLoading ? "연결 중..." : "KAKAO로 로그인"}
-      </Button>
+        </Button>
         <Button full variant="outline" onClick={() => alert("NAVER 로그인")}>
           NAVER로 로그인
         </Button>
@@ -108,5 +112,27 @@ export default function Login() {
         </Button> */}
       </div>
     </form>
+    <ConfirmModal
+      isOpen={loginInput}
+      mode="alert"
+      title="아이디와 비밀번호를 모두 입력해주세요."
+      onCancel={() => setLoginInput(false) }
+    />
+
+    <ConfirmModal
+      isOpen={loginValue}
+      mode="alert"
+      title="아이디 혹은 비밀번호가 올바르지 않습니다."
+      onCancel={() => setLoginValue(false) }
+    />
+
+    <ConfirmModal
+      isOpen={loginCall}
+      mode="alert"
+      title="로그인에 실패했습니다. "
+      description="다시 시도해주세요."
+      onCancel={() => setLoginCall(false) }
+    />
+    </>
   );
 }
